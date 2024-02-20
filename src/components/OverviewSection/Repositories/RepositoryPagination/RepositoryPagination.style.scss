@@ -1,0 +1,43 @@
+.repo-pagination {
+  display: flex;
+  justify-content: center;
+
+  div {
+    padding: 8px;
+    color: #e6edf3;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 5px;
+    &:hover {
+      background-color: #21262c;
+    }
+  }
+
+  .pagination-prev {
+    &::before {
+      content: '<';
+      margin-right: 8px;
+    }
+  }
+
+  .pagination-next {
+    &::after {
+      content: '>';
+      margin-left: 8px;
+    }
+  }
+
+  .page-number {
+    padding: 8px 6px;
+    width: 32px;
+    height: 32px;
+    &.curr-page {
+      background-color: #1f6feb;
+    }
+  }
+}

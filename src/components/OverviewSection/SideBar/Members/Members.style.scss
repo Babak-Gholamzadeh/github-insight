@@ -1,0 +1,18 @@
+.members {
+  width: 100%;
+}
+
+.members .member-list {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.members .member-list .member-link {
+  width: 35px;
+  height: 35px;
+  border-radius: 100%;
+  display: flex;
+  justify-content: center;
+  margin: 0 5px 5px 0;
+  overflow: hidden;
+}

@@ -1,0 +1,14 @@
+.overview-section {
+  display: flex;
+  flex-direction: row;
+  margin-bottom: 50px;
+
+  .repositories {
+    margin-right: 50px;
+    width: 75%;
+  }
+
+  .side-bar {
+    width: 25%;
+  }
+}

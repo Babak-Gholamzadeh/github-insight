@@ -1,0 +1,76 @@
+.pr-item {
+  width: 100%;
+  padding: 15px 25px;
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid #21262d;
+
+  &:hover {
+    background-color: #161b22;
+  }
+
+  &:last-child {
+    border: none;
+  }
+
+  .pr-title {
+    display: flex;
+    flex-direction: column;
+
+    .top-section {
+      margin-bottom: 5px;
+      display: flex;
+      flex-direction: row;
+
+      .pr-state {
+        width: 16px;
+        height: 16px;
+        margin-right: 10px;
+      }
+
+
+      .pr-link {
+        color: #e6edf4;
+        white-space: nowrap;
+
+        &:hover {
+          color: #2e81f7;
+        }
+      }
+    }
+
+    .bottom-section {
+      padding-left: 26px;
+
+      .pr-repo-link {
+        font-weight: 400;
+        font-size: 14px;
+        color: #777;
+
+        &:hover {
+          color: #2e81f7;
+        }
+      }
+    }
+  }
+
+  .pr-long-running {
+    text-align: right;
+    width: 100%;
+    padding-right: 50px;
+    font-weight: 200;
+  }
+
+  .pr-member-link {
+    width: 25px;
+    height: 25px;
+    min-width: 25px;
+    min-height: 25px;
+    border-radius: 100%;
+    display: flex;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .pr-long-running {}
+}

@@ -1,0 +1,18 @@
+.submit-button {
+  height: 50px;
+  display: flex;
+  border-radius: 6px;
+  padding: 12px 24px;
+  background-color: #238636;
+  color: #f1f7f2;
+  font-size: 16px;
+  font-weight: 800;
+  justify-content: center;
+  align-items: center;
+  &:hover {
+    background-color: #2ea043;
+  }
+  &:active {
+    background-color: #238636;
+  }
+}

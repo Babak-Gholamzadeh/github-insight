@@ -1,0 +1,17 @@
+.repositories {
+  display: flex;
+  flex-direction: column;
+
+  .repo-tools {
+    margin-bottom: 20px;
+  }
+
+  .repo-list {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #30363e;
+    border-radius: 10px;
+    margin-bottom: 50px;
+  }
+
+}

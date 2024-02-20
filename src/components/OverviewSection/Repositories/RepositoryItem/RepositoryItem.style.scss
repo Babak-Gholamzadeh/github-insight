@@ -1,0 +1,36 @@
+.repo-item {
+  width: 100%;
+  padding: 25px;
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid #21262d;
+
+  &:hover {
+    background-color: #161b22;
+  }
+
+  &:last-child {
+    border: none;
+  }
+
+  .pr-numbers {
+    display: flex;
+    width: 30%;
+  }
+
+  .pr-section {
+    display: flex;
+    margin-right: 10px;
+    width: 20%;
+  }
+
+  .pr-icon {
+    width: 16px;
+    height: 16px;
+    margin-right: 5px;
+  }
+
+  .pr-number {
+    font-size: 14px;
+  }
+}

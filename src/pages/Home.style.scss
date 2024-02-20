@@ -1,0 +1,28 @@
+.home-page {
+  padding: 20px 0;
+
+  h1.page-title {
+    font-size: 40px;
+    font-weight: 600;
+    margin: 40px 20px 20px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    text-align: center;
+  }
+
+  h3.section-title {
+    margin-bottom: 15px;
+    line-height: 1.5;
+    color: #e6edf3;
+    font-size: 16px;
+    font-weight: 400;
+  }
+}
+
+
+@media only screen and (max-width: 600px) {
+  .home-page {
+    padding: 10px 0;
+  }
+}

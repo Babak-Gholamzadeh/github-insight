@@ -1,0 +1,24 @@
+.text-input-wrapper {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #30363d;
+  height: 32px;
+  border-radius: 6px;
+  background-color: #010409;
+
+  &:focus-within {
+    border-color: #2f81f7;
+    box-shadow: #2f81f7 0px 0px 0px 1px inset;
+  }
+
+  input {
+    width: 100%;
+    background-color: transparent;
+    color: #eee;
+    font-size: 14px;
+    line-height: 20px;
+    padding: 5px 12px;
+  }
+}
+
