@@ -51,7 +51,7 @@ const getRepositories = async ({ organization, token }, page, currentPaginatin) 
     return {
       records,
       pagination,
-    }
+    };
   } catch (error) {
     console.error('Error fetching repos:', error.message);
     throw error;
@@ -82,16 +82,13 @@ const Repositories = ({ auth }) => {
   });
 
   const changePage = async pageNumber => {
-    console.log('changePage > pageNumber:', pageNumber);
     const result = await getRepositories(auth, pageNumber, repos.pagination);
-    console.log('pagination:', result.pagination);
     setRepos(result);
   };
 
   useEffect(() => {
     changePage(1);
   }, [auth]);
-
 
   return (
     <div className="repositories">

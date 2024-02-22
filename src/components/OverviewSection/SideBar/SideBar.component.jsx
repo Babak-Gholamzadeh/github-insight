@@ -3,31 +3,12 @@ import Members from './Members/Members.component';
 
 import './SideBar.style.scss';
 
-const SideBar = () => {
-  const teamList = [
-    {
-      html_url: '',
-      id: 0,
-      name: '',
-      avatar_url: '',
-      numberOfMembers: 0,
-    },
-  ];
-  
-  const memberList = [
-    {
-      html_url: '',
-      avatar_url: '',
-      id: 0,
-      login: ''
-    },
-  ];
-
+const SideBar = ({ auth }) => {
   return (
     <div className="side-bar">
-      <Teams list={teamList}/>
+      <Teams auth={auth} />
       <div className='br'></div>
-      <Members list={memberList} />
+      <Members auth={auth} />
     </div>
   );
 };
