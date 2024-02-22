@@ -12,13 +12,21 @@
     cursor: pointer;
     font-size: 14px;
     font-weight: 600;
-    margin: 0 5px;
-    &:hover {
+    margin: 0 2px;
+    &:not(.disabled):not(.curr-page):hover {
       background-color: #21262c;
+    }
+
+    &.disabled {
+      cursor: unset;
+      color: #3e444d;
+      pointer-events: none;
+      user-select: none;
     }
   }
 
   .pagination-prev {
+    color: #2f81f7;
     &::before {
       content: '<';
       margin-right: 8px;
@@ -26,6 +34,7 @@
   }
 
   .pagination-next {
+    color: #2f81f7;
     &::after {
       content: '>';
       margin-left: 8px;

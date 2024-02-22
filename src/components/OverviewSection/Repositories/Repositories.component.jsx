@@ -8,13 +8,10 @@ import axios from 'axios';
 
 import './Repositories.style.scss';
 
-const getRepositories = async ({ organization, token }, page) => {
+const getRepositories = async ({ organization, token }, page, currentPaginatin) => {
   try {
     const pagination = {
-      first: 1,
-      last: 13,
-      prev: 0,
-      next: 2,
+      ...currentPaginatin,
       curr: page,
     };
     let records = [];
@@ -79,25 +76,29 @@ const Repositories = ({ auth }) => {
       first: 1,
       last: 1,
       prev: 0,
-      next: 3,
+      next: 1,
       curr: 1,
     },
   });
 
+  const changePage = async pageNumber => {
+    console.log('changePage > pageNumber:', pageNumber);
+    const result = await getRepositories(auth, pageNumber, repos.pagination);
+    console.log('pagination:', result.pagination);
+    setRepos(result);
+  };
+
   useEffect(() => {
-    (async () => {
-      const result = await getRepositories(auth, repos.pagination.next);
-      console.log('pagination:', result.pagination);
-      setRepos(result);
-    })();
+    changePage(1);
   }, [auth]);
+
 
   return (
     <div className="repositories">
       <h3 className='section-title'>Repositories</h3>
       <RepositoryTools />
       <ReposityList records={repos.records} />
-      <RepositoryPagination pagination={repos.pagination}/>
+      <RepositoryPagination pagination={repos.pagination} changePage={changePage}/>
     </div>
   );
 };
