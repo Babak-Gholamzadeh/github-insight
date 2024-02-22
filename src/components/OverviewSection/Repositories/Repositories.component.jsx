@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import RepositoryTools from './RepositoryTools/RepositoryTools.component';
 import RepositoryItem from './RepositoryItem/RepositoryItem.component';
-import RepositoryPagination from './RepositoryPagination/RepositoryPagination.component';
+import ListPagination from '../../ListPagination/ListPagination.component';
 // import APIs from '../../../api/config';
 // import useApi from '../../../api/useApi';
 import axios from 'axios';
@@ -58,7 +58,7 @@ const getRepositories = async ({ organization, token }, page, currentPaginatin) 
   }
 };
 
-const ReposityList = ({ records }) => {
+const RepositoryList = ({ records }) => {
   const noItem = <div className="no-item">There is nothing here!</div>;
   const items = records?.map(({ id, ...rest }) => <RepositoryItem {...rest} key={id} />);
 
@@ -94,8 +94,8 @@ const Repositories = ({ auth }) => {
     <div className="repositories">
       <h3 className='section-title'>Repositories</h3>
       <RepositoryTools />
-      <ReposityList records={repos.records} />
-      <RepositoryPagination pagination={repos.pagination} changePage={changePage}/>
+      <RepositoryList records={repos.records} />
+      <ListPagination pagination={repos.pagination} changePage={changePage}/>
     </div>
   );
 };

@@ -59,7 +59,6 @@ const Teams = ({
     })();
   }, [auth]);
 
-
   return (
     <div className="teams">
       <h3 className='section-title'>Teams</h3>

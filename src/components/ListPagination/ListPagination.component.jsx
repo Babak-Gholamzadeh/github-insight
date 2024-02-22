@@ -1,4 +1,4 @@
-import './RepositoryPagination.style.scss';
+import './ListPagination.style.scss';
 
 const PageNumber = ({ children, page, current, disabled, onClick }) => {
   return (
@@ -6,7 +6,7 @@ const PageNumber = ({ children, page, current, disabled, onClick }) => {
   );
 };
 
-const RepositoryPagination = ({
+const ListPagination = ({
   pagination,
   changePage,
 }) => {
@@ -57,7 +57,7 @@ const RepositoryPagination = ({
   })();
 
   return (
-    <div className='repo-pagination'>
+    <div className='list-pagination'>
       {prevPage}
       {firstPage}
       {middlePages.dotsBefore}
@@ -69,4 +69,4 @@ const RepositoryPagination = ({
   );
 };
 
-export default RepositoryPagination;
+export default ListPagination;

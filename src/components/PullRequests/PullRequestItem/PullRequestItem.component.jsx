@@ -74,7 +74,7 @@ const PullRequestItem = ({
                   return closedPullRequestIcon;
               }
             })()
-          } title={state} className='pr-state' />
+          } title={state} className='pr-state' alt=''/>
           <a
             href={html_url}
             className="pr-link"
@@ -105,7 +105,7 @@ const PullRequestItem = ({
         rel="noreferrer"
         title={user.name}
       >
-        <img src={user.avatar_url} className='pr-member-avatar' />
+        <img src={user.avatar_url} className='pr-member-avatar' alt=''/>
       </a>
     </div>
   );
