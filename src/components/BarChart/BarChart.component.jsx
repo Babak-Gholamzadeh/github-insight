@@ -40,12 +40,18 @@ const BarChart = ({ records }) => {
     // ctx.strokeRect(350, 20, 100, 100);
     // ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     console.log('records.length:', records.length);
-    const prWidth = 5;
+    const prWidth = 2;
     const prMaxHeight = 350;
     const prMaxLongRunning = records[0]?.longRunning || 0;
-    ctx.fillStyle = "blue";
+    const colors = {
+      open: '#3fba50',
+      draft: '#858d97',
+      merged: '#a371f7',
+      closed: '#f85149',
+    };
     records.forEach((pr, i) => {
-      const x = canvas.width - ((prWidth + 2) * i);
+      ctx.fillStyle = colors[pr.state];
+      const x = canvas.width - ((prWidth + 1) * i);
       const y = canvas.height;
       const w = prWidth;
       const h = -(pr.longRunning * prMaxHeight / prMaxLongRunning);
