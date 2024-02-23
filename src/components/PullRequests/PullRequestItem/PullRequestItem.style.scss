@@ -21,6 +21,7 @@
       margin-bottom: 5px;
       display: flex;
       flex-direction: row;
+      align-items: center;
 
       .pr-state {
         width: 16px;
@@ -46,10 +47,16 @@
         font-weight: 400;
         font-size: 14px;
         color: #777;
+        margin-right: 10px;
 
         &:hover {
           color: #2e81f7;
         }
+      }
+
+      .pr-created-date {
+        font-size: 10px;
+        color: #555;
       }
     }
   }
