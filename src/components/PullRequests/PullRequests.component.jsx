@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import PullRequestItem from './PullRequestItem/PullRequestItem.component';
 import ListPagination from '../ListPagination/ListPagination.component';
+import BarChart from '../BarChart/BarChart.component';
 import axios from 'axios';
 
 import './PullRequests.style.scss';
@@ -110,16 +111,16 @@ const fetchAllPullRequests = async ({ organization, token }, repo, setTotalFecth
       // const totalNumOfRecords = await getTotalNumOfRecords(token, `https://api.github.com/repos/${organization}/${repo}/pulls?state=all&per_page=1&page=1`);
       const totalNumOfRecords = 1000;
       const totalNumOfPages = Math.ceil(totalNumOfRecords / RECORDS_PER_PAGE);
-      console.log({
-        totalNumOfRecords,
-        totalNumOfPages,
-      });
+      // console.log({
+      //   totalNumOfRecords,
+      //   totalNumOfPages,
+      // });
 
       for (let p = 0; p < totalNumOfPages; p += PAR_PAGES) {
         const beingRange = p;
         const endRange = Math.min(beingRange + PAR_PAGES, totalNumOfPages);
         const currParPages = endRange - beingRange;
-        console.log(`Fetch pages from ${beingRange} to ${endRange}`);
+        // console.log(`Fetch pages from ${beingRange} to ${endRange}`);
         const recordsPerPageChunk = await Promise.all(Array.from({ length: currParPages }, async (_, i) => {
           const url = `https://api.github.com/repos/${organization}/${repo}/pulls?state=all&per_page=${RECORDS_PER_PAGE}&page=${i + beingRange}`;
           const response = await axios.get(url, {
@@ -193,9 +194,10 @@ const auth = {
 
 // const PullRequests = ({ auth }) => {
 const PullRequests = () => {
-  console.log('PullRequests Component');
+  // console.log('PullRequests Component');
 
-  const [records, setRecords] = useState([]);
+  const [paginatedRecords, setPaginatedRecords] = useState([]);
+  const [allRecords, setAllRecords] = useState([]);
   const [pagination, setPagination] = useState({
     first: 1,
     last: 1,
@@ -206,9 +208,9 @@ const PullRequests = () => {
   });
 
   const fetchData = async () => {
-    console.time('fetchAllPullRequests');
+    // console.time('fetchAllPullRequests');
     await fetchAllPullRequests(auth, 'node', updatePageData);
-    console.timeEnd('fetchAllPullRequests');
+    // console.timeEnd('fetchAllPullRequests');
   };
   useEffect(() => {
     console.log('useEffect[auth]');
@@ -216,11 +218,8 @@ const PullRequests = () => {
   }, [auth]);
 
   const updatePageData = (totalFecthedRecords) => {
+    console.log('updatePageData > totalFecthedRecords:', totalFecthedRecords);
     const totalPages = Math.ceil(totalFecthedRecords / pagination.perPage);
-    console.log('updatePageData:', {
-      totalFecthedRecords,
-      totalPages,
-    });
     setPagination({
       ...pagination,
       last: totalPages,
@@ -229,11 +228,12 @@ const PullRequests = () => {
 
     const startIndex = pagination.curr * pagination.perPage;
     const endIndex = startIndex + pagination.perPage;
-    setRecords(sortedRecords.slice(startIndex, endIndex));
+    setPaginatedRecords(sortedRecords.slice(startIndex, endIndex));
+    setAllRecords([...sortedRecords]);
   };
 
   const changePage = pageNumber => {
-    console.log('changePage to:', pageNumber);
+    console.log('changePage > pageNumber:', pageNumber);
     setPagination({
       ...pagination,
       curr: pageNumber,
@@ -243,14 +243,14 @@ const PullRequests = () => {
 
     const startIndex = pageNumber * pagination.perPage;
     const endIndex = startIndex + pagination.perPage;
-    setRecords(sortedRecords.slice(startIndex, endIndex));
+    setPaginatedRecords(sortedRecords.slice(startIndex, endIndex));
   };
 
   return (
     <div className="pull-requests">
       <h3 className='section-title'>Long-running Pull Requests</h3>
-      {/* <PullRequestTools /> */}
-      <PullRequestList records={records} />
+      <BarChart records={allRecords} />
+      <PullRequestList records={paginatedRecords} />
       <ListPagination pagination={pagination} changePage={changePage} />
     </div>
   );

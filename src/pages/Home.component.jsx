@@ -14,8 +14,8 @@ const HomePage = () => {
   return (
     <div className="page-container home-page">
       <h1 className="page-title">GitHub Insight</h1>
-      <GitHubAPIAuthentication onApply={setAuth} />
-      <OverviewSection auth={auth} />
+      {/* <GitHubAPIAuthentication onApply={setAuth} /> */}
+      {/* <OverviewSection auth={auth} /> */}
       <PullRequests auth={auth} />
     </div>
   );

@@ -43,7 +43,7 @@
 
   .page-number {
     padding: 8px 6px;
-    width: 32px;
+    min-width: 32px;
     height: 32px;
     &.curr-page {
       background-color: #1f6feb;
