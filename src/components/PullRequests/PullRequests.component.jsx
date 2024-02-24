@@ -239,12 +239,13 @@ const PullRequests = () => {
       next: totalPages > 1 ? 2 : 1,
     });
 
-    const startIndex = pagination.curr * pagination.perPage;
+    const startIndex = (pagination.curr - 1) * pagination.perPage;
     const endIndex = startIndex + pagination.perPage;
-    setPaginatedRecords(sortedRecordsByLR.slice(startIndex, endIndex));
-    // setPaginatedRecords(sortedRecordsByCA.slice(startIndex, endIndex));
+    // setPaginatedRecords(sortedRecordsByLR.slice(startIndex, endIndex));
+    setPaginatedRecords(sortedRecordsByCA.slice(startIndex, endIndex));
     setAllSortedRecordsByLR([...sortedRecordsByLR]);
     setAllSortedRecordsByCA([...sortedRecordsByCA]);
+    console.log('sortedRecordsByCA[%d]:', startIndex, sortedRecordsByCA[startIndex].title);
   };
 
   const changePage = pageNumber => {
@@ -258,7 +259,8 @@ const PullRequests = () => {
 
     const startIndex = pageNumber * pagination.perPage;
     const endIndex = startIndex + pagination.perPage;
-    setPaginatedRecords(sortedRecordsByLR.slice(startIndex, endIndex));
+    // setPaginatedRecords(sortedRecordsByLR.slice(startIndex, endIndex));
+    setPaginatedRecords(sortedRecordsByCA.slice(startIndex, endIndex));
   };
 
   return (
