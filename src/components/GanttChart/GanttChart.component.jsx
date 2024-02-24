@@ -89,8 +89,11 @@ const GanttChart = ({ records }) => {
       ctxWidth, ctxHeight, canvas.width, canvas.height,
     );
 
-    const canvasOriginX = (coordinateOriginX / zoomFactorX) + (canvas.width - (canvas.width / zoomFactorX));
-    const canvasOriginY = (coordinateOriginY / zoomFactorY) + (canvas.height - (canvas.height / zoomFactorY));
+    const coordinateOriginXWithZoom = coordinateOriginX / zoomFactorX;
+    const coordinateOriginYWithZoom = coordinateOriginY / zoomFactorY;
+
+    const canvasOriginX = coordinateOriginXWithZoom + (canvas.width - (canvas.width / zoomFactorX));
+    const canvasOriginY = coordinateOriginYWithZoom + (canvas.height - (canvas.height / zoomFactorY));
     console.log({
       canvasOriginX,
       canvasOriginY,
@@ -108,7 +111,7 @@ const GanttChart = ({ records }) => {
     const CELL_MARGIN_LEFT = 1;
     const CELL_PADDING_RIGHT = 5;
     const CELL_PADDING_LEFT = 5;
-    const TOTAL_TRACKS = Math.ceil((ctxHeight - TIMELINE_HEIGHT) / TRACK_HEIGHT);
+    const TOTAL_TRACKS = Math.ceil((-coordinateOriginYWithZoom + ctxHeight - TIMELINE_HEIGHT) / TRACK_HEIGHT);
 
     // Draw track lines
     const trackOccupancy = {
@@ -121,8 +124,8 @@ const GanttChart = ({ records }) => {
       },
     };
     for (let i = 0; i < TOTAL_TRACKS; i++) {
-      const [x1, y1] = coor(0, TIMELINE_HEIGHT + TRACK_HEIGHT * i);
-      const [x2, y2] = coor(ctxWidth, TIMELINE_HEIGHT + TRACK_HEIGHT * i);
+      const [x1, y1] = coor(-coordinateOriginXWithZoom + 0, TIMELINE_HEIGHT + TRACK_HEIGHT * i);
+      const [x2, y2] = coor(-coordinateOriginXWithZoom + ctxWidth, TIMELINE_HEIGHT + TRACK_HEIGHT * i);
       // drawLine(x1, y1, x2, y2, '#1b1f26', 1 / zoomFactorY);
       drawLine(ctx, x1, y1, x2, y2, '#333', 1 / zoomFactorY);
     }
@@ -180,12 +183,11 @@ const GanttChart = ({ records }) => {
     });
 
     // Draw Timeline
-    const [x1, y1] = coor(0, TIMELINE_HEIGHT / 2);
-    const [x2, y2] = coor(ctxWidth, TIMELINE_HEIGHT / 2);
+    const [x1, y1] = coor(-coordinateOriginXWithZoom + 0, TIMELINE_HEIGHT / 2);
+    const [x2, y2] = coor(-coordinateOriginXWithZoom + ctxWidth, TIMELINE_HEIGHT / 2);
     drawLine(ctx, x1, y1, x2, y2, 'red', 1 / zoomFactorY);
-
     const monthRangeWidth = TIME_RANGE / TOTAL_MONTHS * canvas.width / TIME_RANGE;
-    for (let i = 0; i < ctxWidth / monthRangeWidth; i++) {
+    for (let i = 0; i < (-coordinateOriginXWithZoom + ctxWidth) / monthRangeWidth; i++) {
       const p = monthRangeWidth * i;
       const lineLength = 5 / zoomFactorY;
       const [x1, y1] = coor(p, TIMELINE_HEIGHT / 2 - lineLength);

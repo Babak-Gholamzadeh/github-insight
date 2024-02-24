@@ -84,8 +84,8 @@ const getPullRequests = async ({ organization, token }, repo, page, currentPagin
   }
 };
 
-const RECORDS_PER_PAGE = 50;
-const PAR_PAGES = 10;
+const RECORDS_PER_PAGE = 20;
+const PAR_PAGES = 5;
 
 const getTotalNumOfRecords = async (token, url) => {
   const response = await axios.get(url, {
@@ -241,8 +241,8 @@ const PullRequests = () => {
 
     const startIndex = (pagination.curr - 1) * pagination.perPage;
     const endIndex = startIndex + pagination.perPage;
-    // setPaginatedRecords(sortedRecordsByLR.slice(startIndex, endIndex));
-    setPaginatedRecords(sortedRecordsByCA.slice(startIndex, endIndex));
+    setPaginatedRecords(sortedRecordsByLR.slice(startIndex, endIndex));
+    // setPaginatedRecords(sortedRecordsByCA.slice(startIndex, endIndex));
     setAllSortedRecordsByLR([...sortedRecordsByLR]);
     setAllSortedRecordsByCA([...sortedRecordsByCA]);
     console.log('sortedRecordsByCA[%d]:', startIndex, sortedRecordsByCA[startIndex].title);
@@ -259,8 +259,8 @@ const PullRequests = () => {
 
     const startIndex = pageNumber * pagination.perPage;
     const endIndex = startIndex + pagination.perPage;
-    // setPaginatedRecords(sortedRecordsByLR.slice(startIndex, endIndex));
-    setPaginatedRecords(sortedRecordsByCA.slice(startIndex, endIndex));
+    setPaginatedRecords(sortedRecordsByLR.slice(startIndex, endIndex));
+    // setPaginatedRecords(sortedRecordsByCA.slice(startIndex, endIndex));
   };
 
   return (
