@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-import './BarChart.style.scss';
+import './GanttChart.style.scss';
 
 const list = [{
   id: '1',
@@ -21,7 +21,7 @@ const list = [{
   closed_at: '2023-02-03',
 }];
 
-const BarChart = ({ records }) => {
+const GanttChart = ({ records }) => {
   const refWrapper = useRef();
   const refCanvas = useRef();
 
@@ -46,37 +46,38 @@ const BarChart = ({ records }) => {
     // ctx.fillRect(10, 10, 300, 100);
     // ctx.strokeRect(10, 10, 300, 100);
     // ctx.strokeRect(350, 20, 100, 100);
-    // ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-
-    const coor = coorBasedOnCanSize(canvas.width, canvas.height);
-
-    console.log('GanttChart > records.length:', records.length);
-    const prWidth = 2;
-    const prMaxHeight = 350;
-    const prMaxLongRunning = records[0]?.longRunning || 0;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     const colors = {
       open: '#3fba50',
       draft: '#858d97',
       merged: '#a371f7',
       closed: '#f85149',
     };
-    records.forEach((pr, i) => {
+
+    const coor = coorBasedOnCanSize(canvas.width, canvas.height);
+
+    console.log('GanttChart > records.length:', records.length, records[100]?.closed_at);
+    const prHeight = 1;
+    const now = Date.now();
+    const timeRange = 12 * (30 * 24 * 3600 * 1000);
+    records.slice(0).forEach((pr, i) => {
       ctx.fillStyle = colors[pr.state];
-      const x = (prWidth + 1) * i;
-      const y = 0;
-      const w = prWidth;
-      const h = pr.longRunning * prMaxHeight / prMaxLongRunning;
-      // console.log(x, y, w, h);
+      const closedAtTime = new Date(pr.closed_at).getTime() || now;
+      const createdAtTime = new Date(pr.created_at).getTime();
+      const x = (now - closedAtTime) * canvas.width / timeRange;
+      const y = (prHeight + 1) * i;
+      const w = (now - createdAtTime) * canvas.width / timeRange;;
+      const h = prHeight;
       ctx.fillRect(...coor(x, y, w, h));
     });
 
   }, [records]);
 
   return (
-    <div ref={refWrapper} className='bar-chart-wrapper'>
-      <canvas ref={refCanvas}/>
+    <div ref={refWrapper} className='grantt-chart-wrapper'>
+      <canvas ref={refCanvas} />
     </div>
   );
 };
 
-export default BarChart;
+export default GanttChart;

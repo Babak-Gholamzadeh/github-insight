@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import PullRequestItem from './PullRequestItem/PullRequestItem.component';
 import ListPagination from '../ListPagination/ListPagination.component';
 import BarChart from '../BarChart/BarChart.component';
+import GanttChart from '../GanttChart/GanttChart.component';
 import axios from 'axios';
 
 import './PullRequests.style.scss';
@@ -103,13 +104,14 @@ const getTotalNumOfRecords = async (token, url) => {
   );
 };
 
-let sortedRecords = [];
+let sortedRecordsByLR = [];
+let sortedRecordsByCA = [];
 
 const fetchAllPullRequests = async ({ organization, token }, repo, setTotalFecthedRecords) => {
   try {
     if (organization && token && repo) {
-      // const totalNumOfRecords = await getTotalNumOfRecords(token, `https://api.github.com/repos/${organization}/${repo}/pulls?state=all&per_page=1&page=1`);
-      const totalNumOfRecords = 1000;
+      const totalNumOfRecords = await getTotalNumOfRecords(token, `https://api.github.com/repos/${organization}/${repo}/pulls?state=all&per_page=1&page=1`);
+      // const totalNumOfRecords = 1000;
       const totalNumOfPages = Math.ceil(totalNumOfRecords / RECORDS_PER_PAGE);
       // console.log({
       //   totalNumOfRecords,
@@ -160,14 +162,24 @@ const fetchAllPullRequests = async ({ organization, token }, repo, setTotalFecth
             closed_at,
           }));
         }));
-        sortedRecords.push(...recordsPerPageChunk.flat(1));
-        sortedRecords
+        const flatData = recordsPerPageChunk.flat(1);
+        // Sorted by Long-Running
+        sortedRecordsByLR.push(...flatData);
+        sortedRecordsByLR
           .sort((a, b) => {
             const diff1 = (new Date(a.closed_at).getTime() || Date.now()) - new Date(a.created_at).getTime();
             const diff2 = (new Date(b.closed_at).getTime() || Date.now()) - new Date(b.created_at).getTime();
             return diff2 - diff1;
           });
-        setTotalFecthedRecords(sortedRecords.length);
+        // Sorted By Closed-At
+        sortedRecordsByCA.push(...flatData);
+        sortedRecordsByCA
+          .sort((a, b) => {
+            const diff1 = new Date(a.closed_at).getTime() || Date.now();
+            const diff2 = new Date(b.closed_at).getTime() || Date.now();
+            return diff2 - diff1;
+          });
+        setTotalFecthedRecords(sortedRecordsByLR.length);
       }
     }
   } catch (error) {
@@ -197,7 +209,8 @@ const PullRequests = () => {
   // console.log('PullRequests Component');
 
   const [paginatedRecords, setPaginatedRecords] = useState([]);
-  const [allRecords, setAllRecords] = useState([]);
+  const [allSortedRecordsByLR, setAllSortedRecordsByLR] = useState([]);
+  const [allSortedRecordsByCA, setAllSortedRecordsByCA] = useState([]);
   const [pagination, setPagination] = useState({
     first: 1,
     last: 1,
@@ -209,7 +222,7 @@ const PullRequests = () => {
 
   const fetchData = async () => {
     // console.time('fetchAllPullRequests');
-    await fetchAllPullRequests(auth, 'node', updatePageData);
+    await fetchAllPullRequests(auth, 'node-gyp', updatePageData);
     // console.timeEnd('fetchAllPullRequests');
   };
   useEffect(() => {
@@ -228,8 +241,9 @@ const PullRequests = () => {
 
     const startIndex = pagination.curr * pagination.perPage;
     const endIndex = startIndex + pagination.perPage;
-    setPaginatedRecords(sortedRecords.slice(startIndex, endIndex));
-    setAllRecords([...sortedRecords]);
+    setPaginatedRecords(sortedRecordsByLR.slice(startIndex, endIndex));
+    setAllSortedRecordsByLR([...sortedRecordsByLR]);
+    setAllSortedRecordsByCA([...sortedRecordsByCA]);
   };
 
   const changePage = pageNumber => {
@@ -243,13 +257,14 @@ const PullRequests = () => {
 
     const startIndex = pageNumber * pagination.perPage;
     const endIndex = startIndex + pagination.perPage;
-    setPaginatedRecords(sortedRecords.slice(startIndex, endIndex));
+    setPaginatedRecords(sortedRecordsByLR.slice(startIndex, endIndex));
   };
 
   return (
     <div className="pull-requests">
       <h3 className='section-title'>Long-running Pull Requests</h3>
-      <BarChart records={allRecords} />
+      <GanttChart records={allSortedRecordsByCA} />
+      <BarChart records={allSortedRecordsByLR} />
       <PullRequestList records={paginatedRecords} />
       <ListPagination pagination={pagination} changePage={changePage} />
     </div>
