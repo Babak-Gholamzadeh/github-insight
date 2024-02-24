@@ -222,7 +222,7 @@ const PullRequests = () => {
 
   const fetchData = async () => {
     // console.time('fetchAllPullRequests');
-    await fetchAllPullRequests(auth, 'node-gyp', updatePageData);
+    await fetchAllPullRequests(auth, 'Release', updatePageData);
     // console.timeEnd('fetchAllPullRequests');
   };
   useEffect(() => {
