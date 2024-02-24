@@ -2,25 +2,6 @@ import { useEffect, useRef } from 'react';
 
 import './BarChart.style.scss';
 
-const list = [{
-  id: '1',
-  state: 'open',
-  title: 'This is a PR title',
-  html_url: 'https://github.com',
-  user: {
-    name: 'username',
-    avatar_url: 'https://github.com',
-    html_url: 'https://github.com',
-  },
-  repo: {
-    full_name: 'github/repo',
-    html_url: 'https://github.com',
-  },
-  longRunning: 335161035,
-  created_at: '2023-01-03',
-  closed_at: '2023-02-03',
-}];
-
 const BarChart = ({ records }) => {
   const refWrapper = useRef();
   const refCanvas = useRef();
@@ -40,17 +21,9 @@ const BarChart = ({ records }) => {
 
     const ctx = canvas.getContext('2d');
 
-    // ctx.fillStyle = "#fe2";
-    // ctx.strokeStyle = "red";
-
-    // ctx.fillRect(10, 10, 300, 100);
-    // ctx.strokeRect(10, 10, 300, 100);
-    // ctx.strokeRect(350, 20, 100, 100);
-    // ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-
     const coor = coorBasedOnCanSize(canvas.width, canvas.height);
 
-    console.log('GanttChart > records.length:', records.length);
+    console.log('BarChart > records.length:', records.length);
     const prWidth = 2;
     const prMaxHeight = 350;
     const prMaxLongRunning = records[0]?.longRunning || 0;
