@@ -25,6 +25,36 @@ const GanttChart = ({ records }) => {
     return [_x, _y, _w, _h];
   };
 
+  const drawImgWithRadius = (ctx, imgUrl, x, y, width, height, radius) => {
+    const img = new Image();
+    img.onload = () => {
+      ctx.save();
+      ////////
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+      ////////
+      ctx.clip();
+      ctx.drawImage(
+        img,
+        x,
+        y,
+        width,
+        height,
+      );
+      ctx.restore();
+    };
+    img.src = imgUrl;
+  };
+
   useEffect(() => {
     const canvas = refCanvas.current;
     canvas.width = refWrapper.current.offsetWidth;
@@ -47,8 +77,10 @@ const GanttChart = ({ records }) => {
     const TRACK_HEIGHT = 40;
     const TRACK_PADDING_TOP = 5;
     const TRACK_PADDING_BOTTOM = 5;
-    const CELL_PADDING_RIGHT = 1;
-    const CELL_PADDING_LEFT = 1;
+    const CELL_MARGIN_RIGHT = 1;
+    const CELL_MARGIN_LEFT = 1;
+    const CELL_PADDING_RIGHT = 5;
+    const CELL_PADDING_LEFT = 5;
     const TOTAL_TRACKS = Math.ceil(ctxHeight / TRACK_HEIGHT);
     const originX = canvas.width - (canvas.width / zoomFactorX);
     const originY = canvas.height - (canvas.height / zoomFactorY);
@@ -97,11 +129,34 @@ const GanttChart = ({ records }) => {
       const y = TRACK_HEIGHT * t + TRACK_PADDING_BOTTOM;
       const h = TRACK_HEIGHT - TRACK_PADDING_BOTTOM - TRACK_PADDING_TOP;
 
+      const [nx, ny, nw, nh] = coor(x + CELL_MARGIN_RIGHT, y, w - (CELL_MARGIN_RIGHT + CELL_MARGIN_LEFT), h);
+      // Draw Rect
       ctx.beginPath();
-      ctx.roundRect(...coor(x + CELL_PADDING_RIGHT, y, w - (CELL_PADDING_RIGHT + CELL_PADDING_LEFT), h), 5);
+      ctx.roundRect(nx, ny, nw, nh, 5);
       ctx.stroke();
       ctx.fill();
-
+      // Draw Text
+      const fontSize = 14;
+      ctx.font = `${fontSize}px Segoe UI`;
+      ctx.fillStyle = "white";
+      const charWidth = 7;
+      ctx.fillText(
+        pr.title.slice(0, (-nw - (CELL_PADDING_LEFT - CELL_PADDING_RIGHT)) / charWidth),
+        nx + nw + CELL_PADDING_RIGHT,
+        ny + (nh / 2) + 5,
+      );
+      // Draw Image
+      const imgWidth = 20;
+      const imgHeight = 20;
+      drawImgWithRadius(
+        ctx,
+        pr.user.avatar_url,
+        nx - CELL_PADDING_RIGHT - imgWidth,
+        ny + (nh / 2) - (imgHeight / 2),
+        imgWidth,
+        imgHeight,
+        imgWidth / 2,
+      );
       trackOccupancy.registerInTrack(t, x + w);
     });
   }, [records, zoomFactorX, zoomFactorY]);

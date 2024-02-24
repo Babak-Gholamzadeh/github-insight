@@ -124,7 +124,7 @@ const fetchAllPullRequests = async ({ organization, token }, repo, setTotalFecth
         const currParPages = endRange - beingRange;
         // console.log(`Fetch pages from ${beingRange} to ${endRange}`);
         const recordsPerPageChunk = await Promise.all(Array.from({ length: currParPages }, async (_, i) => {
-          const url = `https://api.github.com/repos/${organization}/${repo}/pulls?state=all&per_page=${RECORDS_PER_PAGE}&page=${i + beingRange}`;
+          const url = `https://api.github.com/repos/${organization}/${repo}/pulls?state=all&per_page=${RECORDS_PER_PAGE}&page=${i + beingRange + 1}`;
           const response = await axios.get(url, {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -242,6 +242,7 @@ const PullRequests = () => {
     const startIndex = pagination.curr * pagination.perPage;
     const endIndex = startIndex + pagination.perPage;
     setPaginatedRecords(sortedRecordsByLR.slice(startIndex, endIndex));
+    // setPaginatedRecords(sortedRecordsByCA.slice(startIndex, endIndex));
     setAllSortedRecordsByLR([...sortedRecordsByLR]);
     setAllSortedRecordsByCA([...sortedRecordsByCA]);
   };
