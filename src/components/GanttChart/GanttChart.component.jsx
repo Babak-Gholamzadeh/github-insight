@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { log, getReadableTimePeriodShorter } from '../../utils';
+import { log, getRandomColor, getReadableTimePeriodShorter } from '../../utils';
 
 import './GanttChart.style.scss';
 
@@ -9,6 +9,21 @@ const COLORS = {
   merged: '#a371f7',
   closed: '#f85149',
 };
+
+const MONTH_COLOR = (op) => [
+  `rgba(255, 215, 0, ${op})`,
+  `rgba(255, 105, 180, ${op})`,
+  `rgba(0, 250, 154, ${op})`,
+  `rgba(30, 144, 255, ${op})`,
+  `rgba(255, 140, 0, ${op})`,
+  `rgba(138, 43, 226, ${op})`,
+  `rgba(50, 205, 50, ${op})`,
+  `rgba(255, 69, 0, ${op})`,
+  `rgba(255, 99, 71, ${op})`,
+  `rgba(139, 69, 19, ${op})`,
+  `rgba(75, 0, 130, ${op})`,
+  `rgba(85, 107, 47, ${op})`,
+];
 
 const ONE_DAY = 24 * 3600 * 1000;
 
@@ -180,41 +195,73 @@ const GanttChart = ({ records }) => {
   const drawTimeline = (
     ctx, coor, canvas,
     NOW, TIME_RANGE, TIMELINE_HEIGHT, TOTAL_DAYS,
-    coordinateOriginXWithZoom, coordinateOriginYWithZoom, ctxWidth, zoomFactorX, zoomFactorY,
+    coordinateOriginXWithZoom, coordinateOriginYWithZoom, ctxWidth, ctxHeight, zoomFactorX, zoomFactorY,
   ) => {
     const fixedX = -coordinateOriginXWithZoom + 0;
     const fixedW = -coordinateOriginXWithZoom + ctxWidth;
     const fixedY = -coordinateOriginYWithZoom + 0;
+    const fixedH = -coordinateOriginYWithZoom + ctxHeight;
+    const middleLineY = TIMELINE_HEIGHT / 2;
     // Draw top line
     {
       const [x, y, w, h] = coor(fixedX, fixedY, ctxWidth, TIMELINE_HEIGHT);
       // @TODO: Add gradient color
-      drawRectWithRadius(ctx, x, y, w, h, 0, '#0d1117');
+      // drawRectWithRadius(ctx, x, y, w, h, 0, '#0d1117');
+      drawRectWithRadius(ctx, x, y, w, h, 0, '#000');
     }
     // Draw middle line
     {
-      const [x1, y1] = coor(fixedX, fixedY + TIMELINE_HEIGHT / 2);
-      const [x2, y2] = coor(fixedW, fixedY + TIMELINE_HEIGHT / 2);
-      drawLine(ctx, x1, y1, x2, y2, 'red', 1 / zoomFactorY);
+      const [x1, y1] = coor(fixedX, fixedY + middleLineY);
+      const [x2, y2] = coor(fixedW, fixedY + middleLineY);
+      drawLine(ctx, x1, y1, x2, y2, '#444', 1 / zoomFactorY);
     }
     // Draw small vertical short lines
     const oneDayWidth = ONE_DAY * canvas.width / TIME_RANGE;
     const totalDaysVisibleOnCanvas = (ctxWidth / oneDayWidth);
     const shortLineIndex = Math.floor(fixedX / oneDayWidth);
-    log({fixedX, shortLineIndex, oneDayWidth})
+    // log({ fixedX, shortLineIndex, oneDayWidth });
     const dayOffset = getDayOffset(NOW);
     const dayOffsetWidth = dayOffset * oneDayWidth / ONE_DAY;
+    let nextMonthSectionPosX = fixedX;
+    let day, month, year;
+    const monthColorOpacity = .05;
     for (let i = 0, j = shortLineIndex; i <= totalDaysVisibleOnCanvas; i++, j++) {
+      day = new Date(NOW - (ONE_DAY * j)).getDate();
+      month = new Date(NOW - (ONE_DAY * j)).getMonth();
+      year = new Date(NOW - (ONE_DAY * j)).getFullYear();
+      // log({ month });
+      const isStartOfMonth = day === 1;
+      const isStartOfYear = isStartOfMonth && month === 0;
+
+      const sectionType = [isStartOfYear, isStartOfMonth, true].findIndex(Boolean);
+
       const p = dayOffsetWidth + oneDayWidth * j;
-      const lineLength = 5 / zoomFactorY;
-      const [x1, y1] = coor(p, fixedY + TIMELINE_HEIGHT / 2 - lineLength);
-      const [x2, y2] = coor(p, fixedY + TIMELINE_HEIGHT / 2 + lineLength);
-      drawLine(ctx, x1, y1, x2, y2, 'yellow', 1 / zoomFactorX);
-      
+      const lineLength = [20, 10, 5][sectionType] / zoomFactorY;
+      const lineColor = ['red', 'green', '#aaa'][sectionType];
+      const lineWidth = [6, 3, 1][sectionType];
+      const [x1, y1] = coor(p, fixedY + middleLineY - lineLength);
+      const [x2, y2] = coor(p, fixedY + middleLineY + lineLength);
+
+      // Draw short line
+      drawLine(ctx, x1, y1, x2, y2, lineColor, lineWidth / zoomFactorX);
+
       // Draw day of the month
-      const dayOfMonth = new Date(NOW - (ONE_DAY * j)).getDate();
-      drawText(ctx, dayOfMonth, x1 + (oneDayWidth / 3), y1 + 15, 14, "white");
+      const [tX, tY] = coor(p - 15, fixedY + middleLineY - 20);
+      drawText(ctx, day, tX, tY, 14, "white");
+
+      // Draw month section
+      if (isStartOfMonth) {
+        // const numOfDaysPerMonth = new Date(year, month + 1, 0).getDate();
+        // // log({year, month, numOfDaysPerMonth});
+        // const [mRX, mRY, mRW, mRH] = coor(p, fixedY, -oneDayWidth * numOfDaysPerMonth, fixedH);
+        const [mRX, mRY, mRW, mRH] = coor(nextMonthSectionPosX, fixedY, p - nextMonthSectionPosX, fixedH);
+        drawRect(ctx, mRX, mRY, mRW, mRH, MONTH_COLOR(monthColorOpacity)[month]);
+        nextMonthSectionPosX = p;
+      }
     }
+    const [mRX, mRY, mRW, mRH] = coor(nextMonthSectionPosX, fixedY, fixedW - nextMonthSectionPosX, fixedH);
+    drawRect(ctx, mRX, mRY, mRW, mRH, MONTH_COLOR(monthColorOpacity)[month]);
+
   };
 
   useEffect(() => {
@@ -309,6 +356,7 @@ const GanttChart = ({ records }) => {
       coordinateOriginXWithZoom,
       coordinateOriginYWithZoom,
       ctxWidth,
+      ctxHeight,
       zoomFactorX,
       zoomFactorY,
     );

@@ -10,6 +10,25 @@ export const log = msg =>
       .join(', ')
   );
 
+export const getRandomColor = (seed) => {
+  const generateRandomNumber = (min, max) => {
+    const range = max - min + 1;
+    return Math.floor(seed * range) + min;
+  };
+
+  const getRandomHexDigit = () => {
+    const hexDigits = '0123456789ABCDEF';
+    return hexDigits[generateRandomNumber(0, 15)];
+  };
+
+  let color = '#';
+  for (let i = 0; i < 6; i++) {
+    color += getRandomHexDigit();
+  }
+
+  return color;
+};
+
 export const getReadableTimePeriodShorter = milliseconds => {
   const units = [
     { label: 'y', duration: 365.25 * 24 * 60 * 60 * 1000 },
