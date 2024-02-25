@@ -25,6 +25,11 @@ const MONTH_COLOR = (op) => [
   `rgba(85, 107, 47, ${op})`,
 ];
 
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
+
 const ONE_DAY = 24 * 3600 * 1000;
 
 const getDayOffset = NOW => {
@@ -59,7 +64,7 @@ const GanttChart = ({ records }) => {
 
   const drawRect = (ctx, x, y, w, h, bgColor, strockColor) => {
     ctx.fillStyle = bgColor;
-    ctx.strokeStyle = strockColor || bgColor;
+    // ctx.strokeStyle = strockColor || bgColor;
     ctx.rect(x, y, w, h);
     ctx.fill();
   };
@@ -223,6 +228,7 @@ const GanttChart = ({ records }) => {
     const dayOffset = getDayOffset(NOW);
     const dayOffsetWidth = dayOffset * oneDayWidth / ONE_DAY;
     let nextMonthSectionPosX = fixedX;
+    let isStartOfMonth, isStartOfYear;
     let day, month, year;
     const monthColorOpacity = .05;
     for (let i = 0, j = shortLineIndex; i <= totalDaysVisibleOnCanvas; i++, j++) {
@@ -230,8 +236,8 @@ const GanttChart = ({ records }) => {
       month = new Date(NOW - (ONE_DAY * j)).getMonth();
       year = new Date(NOW - (ONE_DAY * j)).getFullYear();
       // log({ month });
-      const isStartOfMonth = day === 1;
-      const isStartOfYear = isStartOfMonth && month === 0;
+      isStartOfMonth = day === 1;
+      isStartOfYear = isStartOfMonth && month === 0;
 
       const sectionType = [isStartOfYear, isStartOfMonth, true].findIndex(Boolean);
 
@@ -247,21 +253,37 @@ const GanttChart = ({ records }) => {
 
       // Draw day of the month
       const [tX, tY] = coor(p - 15, fixedY + middleLineY - 20);
-      drawText(ctx, day, tX, tY, 14, "white");
+      drawText(ctx, day, tX, tY, 10, "#aaa");
 
       // Draw month section
       if (isStartOfMonth) {
-        // const numOfDaysPerMonth = new Date(year, month + 1, 0).getDate();
-        // // log({year, month, numOfDaysPerMonth});
-        // const [mRX, mRY, mRW, mRH] = coor(p, fixedY, -oneDayWidth * numOfDaysPerMonth, fixedH);
-        const [mRX, mRY, mRW, mRH] = coor(nextMonthSectionPosX, fixedY, p - nextMonthSectionPosX, fixedH);
-        drawRect(ctx, mRX, mRY, mRW, mRH, MONTH_COLOR(monthColorOpacity)[month]);
+        const monthWidth = p - nextMonthSectionPosX;
+        const [mLX, mLY, mLW, mLH] = coor(nextMonthSectionPosX, fixedY, monthWidth, fixedH);
+        drawRectWithRadius(ctx, mLX, mLY, mLW, mLH, 0, MONTH_COLOR(monthColorOpacity)[month], MONTH_COLOR(0)[month]);
+        const [tX, tY] = coor(
+          nextMonthSectionPosX + (monthWidth / 2),
+          fixedY + (middleLineY / 4),
+        );
+        drawText(ctx, MONTH_NAMES[month], tX, tY, 14, 'white');
         nextMonthSectionPosX = p;
       }
     }
-    const [mRX, mRY, mRW, mRH] = coor(nextMonthSectionPosX, fixedY, fixedW - nextMonthSectionPosX, fixedH);
-    drawRect(ctx, mRX, mRY, mRW, mRH, MONTH_COLOR(monthColorOpacity)[month]);
-
+    if (isStartOfMonth) {
+      month--;
+      if (month < 0)
+        month = 11;
+    }
+    const monthWidth = fixedW - nextMonthSectionPosX;
+    const [mLX, mLY, mLW, mLH] = coor(nextMonthSectionPosX, fixedY, monthWidth, fixedH);
+    drawRectWithRadius(ctx, mLX, mLY, mLW, mLH, 0, MONTH_COLOR(monthColorOpacity)[month], MONTH_COLOR(0)[month]);
+    if (monthWidth > 3 * oneDayWidth) {
+      const [tX, tY] = coor(
+        nextMonthSectionPosX + (monthWidth / 2) + (MONTH_NAMES[month].length * 7 / 2),
+        fixedY + (middleLineY / 4),
+      );
+      drawText(ctx, MONTH_NAMES[month], tX, tY, 14, 'white');
+    }
+    // }
   };
 
   useEffect(() => {
