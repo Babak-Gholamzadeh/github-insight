@@ -53,6 +53,7 @@ const GanttChart = ({ records }) => {
   const [startDragPosY, setStartDragPosY] = useState(0);
   const [coordinateOriginX, setCoordinateOriginX] = useState(0);
   const [coordinateOriginY, setCoordinateOriginY] = useState(0);
+  const [timelineCursorX, setTimelineCursorX] = useState(0);
 
   const coorBasedOnCanSize = (canvasOriginX, canvasOriginY, cw, ch) => (x, y, w, h) => {
     const _x = (cw - x) - canvasOriginX;
@@ -109,6 +110,20 @@ const GanttChart = ({ records }) => {
     ctx.lineWidth = lineWidth;
     ctx.stroke();
     ctx.lineWidth = 1;
+  };
+
+  const drawGlowyLine = (ctx, x1, y1, x2, y2, color = "#fff", lineWidth = 1) => {
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = lineWidth;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = lineWidth * 5;
+    ctx.stroke();
+    ctx.lineWidth = 1;
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
   };
 
   const drawText = (ctx, text, x, y, color, size, weight = 'normal') => {
@@ -248,7 +263,7 @@ const GanttChart = ({ records }) => {
       const lineLength = (isStartOfMonth ? 6 : 3) / zoomFactorY;
       const lineColor = '#aaa';
       const lineWidth = (isStartOfMonth ? 3 : 1) * zoomFactorX;
-      if(isStartOfYear) {
+      if (isStartOfYear) {
         const [x1, y1] = coor(p, fixedY);
         const [x2, y2] = coor(p, fixedH);
         drawLine(ctx, x1, y1, x2, y2, MONTH_COLOR(.2)[month], 1 / zoomFactorX);
@@ -344,9 +359,14 @@ const GanttChart = ({ records }) => {
   };
 
   useEffect(() => {
+    const wrapperStyle = window.getComputedStyle(refWrapper.current);
+    const paddingTop = parseInt(wrapperStyle.getPropertyValue('padding-top'));
+    const paddingRight = parseInt(wrapperStyle.getPropertyValue('padding-right'));
+    const paddingBottom = parseInt(wrapperStyle.getPropertyValue('padding-bottom'));
+    const paddingLeft = parseInt(wrapperStyle.getPropertyValue('padding-left'));
     const canvas = refCanvas.current;
-    canvas.width = refWrapper.current.offsetWidth;
-    canvas.height = refWrapper.current.offsetHeight;
+    canvas.width = refWrapper.current.clientWidth - (paddingRight + paddingLeft);
+    canvas.height = refWrapper.current.clientHeight - (paddingTop + paddingBottom);
 
     const ctx = canvas.getContext('2d');
     ctx.scale(zoomFactorX, zoomFactorY);
@@ -440,6 +460,15 @@ const GanttChart = ({ records }) => {
       zoomFactorY,
     );
 
+    // Draw Timeline Cursor
+    {
+      const x = (-coordinateOriginX + timelineCursorX) / zoomFactorX;
+      const [x1, y1] = coor(x, -coordinateOriginYWithZoom);
+      const [x2, y2] = coor(x, -coordinateOriginYWithZoom + ctxHeight);
+      drawGlowyLine(ctx, x1, y1, x2, y2, '#2e81f7', 1 / zoomFactorX);
+    }
+
+
     return () => {
       document.removeEventListener('mouseup', onMouseDrag);
     };
@@ -450,6 +479,7 @@ const GanttChart = ({ records }) => {
     zoomFactorY,
     coordinateOriginX,
     coordinateOriginY,
+    timelineCursorX,
   ]);
 
   // useEffect(() => {
@@ -519,6 +549,12 @@ const GanttChart = ({ records }) => {
           setCoordinateOriginY(newCoorY);
           setStartDragPosX(e.clientX);
           setStartDragPosY(e.clientY);
+        }
+        {
+          const bounds = e.target.getBoundingClientRect();
+          const mouseX = e.clientX - bounds.left;
+          const cursorX = refCanvas.current.width - mouseX;
+          setTimelineCursorX(cursorX);
         }
         break;
     }
