@@ -206,7 +206,7 @@ const GanttChart = ({ records }) => {
     const fixedW = -coordinateOriginXWithZoom + ctxWidth;
     const fixedY = -coordinateOriginYWithZoom + 0;
     const fixedH = -coordinateOriginYWithZoom + ctxHeight;
-    const middleLineY = TIMELINE_HEIGHT / 2;
+    const middleLineY = TIMELINE_HEIGHT * .9;
     // Draw top line
     {
       const [x, y, w, h] = coor(fixedX, fixedY, ctxWidth, TIMELINE_HEIGHT);
@@ -244,7 +244,7 @@ const GanttChart = ({ records }) => {
       const p = dayOffsetWidth + oneDayWidth * j;
       const lineLength = [20, 10, 5][sectionType] / zoomFactorY;
       const lineColor = ['red', 'green', '#aaa'][sectionType];
-      const lineWidth = [6, 3, 1][sectionType];
+      const lineWidth = [6, 3, 1][sectionType] * zoomFactorX;
       const [x1, y1] = coor(p, fixedY + middleLineY - lineLength);
       const [x2, y2] = coor(p, fixedY + middleLineY + lineLength);
 
@@ -260,30 +260,38 @@ const GanttChart = ({ records }) => {
         const monthWidth = p - nextMonthSectionPosX;
         const [mLX, mLY, mLW, mLH] = coor(nextMonthSectionPosX, fixedY, monthWidth, fixedH);
         drawRectWithRadius(ctx, mLX, mLY, mLW, mLH, 0, MONTH_COLOR(monthColorOpacity)[month], MONTH_COLOR(0)[month]);
+        const textWidth = MONTH_NAMES[month].length * 10;
         const [tX, tY] = coor(
-          nextMonthSectionPosX + (monthWidth / 2),
+          Math.min(
+            nextMonthSectionPosX + (monthWidth / 2) + (textWidth / 2),
+            nextMonthSectionPosX + monthWidth,
+          ),
           fixedY + (middleLineY / 4),
         );
+        // log({here: 1, month, tX, nextMonthSectionPosX, textWidth, monthWidth});
         drawText(ctx, MONTH_NAMES[month], tX, tY, 14, 'white');
         nextMonthSectionPosX = p;
       }
     }
-    if (isStartOfMonth) {
+      // Draw most left month section
+      if (isStartOfMonth) {
       month--;
       if (month < 0)
         month = 11;
     }
-    const monthWidth = fixedW - nextMonthSectionPosX;
+    const monthWidth = (fixedW + dayOffsetWidth) - nextMonthSectionPosX;
     const [mLX, mLY, mLW, mLH] = coor(nextMonthSectionPosX, fixedY, monthWidth, fixedH);
     drawRectWithRadius(ctx, mLX, mLY, mLW, mLH, 0, MONTH_COLOR(monthColorOpacity)[month], MONTH_COLOR(0)[month]);
-    if (monthWidth > 3 * oneDayWidth) {
-      const [tX, tY] = coor(
-        nextMonthSectionPosX + (monthWidth / 2) + (MONTH_NAMES[month].length * 7 / 2),
-        fixedY + (middleLineY / 4),
-      );
-      drawText(ctx, MONTH_NAMES[month], tX, tY, 14, 'white');
-    }
-    // }
+    const textWidth = MONTH_NAMES[month].length * 10;
+    const [tX, tY] = coor(
+      Math.max(
+        nextMonthSectionPosX + (monthWidth / 2) + (textWidth / 2),
+        nextMonthSectionPosX + textWidth,
+      ),
+      fixedY + (middleLineY / 4),
+    );
+    // log({here: 2, month, tX, nextMonthSectionPosX, textWidth, monthWidth});
+    drawText(ctx, MONTH_NAMES[month], tX, tY, 14, 'white');
   };
 
   useEffect(() => {
