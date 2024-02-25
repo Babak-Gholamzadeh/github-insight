@@ -226,12 +226,12 @@ const PullRequests = () => {
     // console.timeEnd('fetchAllPullRequests');
   };
   useEffect(() => {
-    console.log('useEffect[auth]');
+    // console.log('useEffect[auth]');
     fetchData();
   }, [auth]);
 
   const updatePageData = (totalFecthedRecords) => {
-    console.log('updatePageData > totalFecthedRecords:', totalFecthedRecords);
+    // console.log('updatePageData > totalFecthedRecords:', totalFecthedRecords);
     const totalPages = Math.ceil(totalFecthedRecords / pagination.perPage);
     setPagination({
       ...pagination,
@@ -245,11 +245,11 @@ const PullRequests = () => {
     // setPaginatedRecords(sortedRecordsByCA.slice(startIndex, endIndex));
     setAllSortedRecordsByLR([...sortedRecordsByLR]);
     setAllSortedRecordsByCA([...sortedRecordsByCA]);
-    console.log('sortedRecordsByCA[%d]:', startIndex, sortedRecordsByCA[startIndex].title);
+    // console.log('sortedRecordsByCA[%d]:', startIndex, sortedRecordsByCA[startIndex].title);
   };
 
   const changePage = pageNumber => {
-    console.log('changePage > pageNumber:', pageNumber);
+    // console.log('changePage > pageNumber:', pageNumber);
     setPagination({
       ...pagination,
       curr: pageNumber,

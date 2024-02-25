@@ -23,7 +23,7 @@ const BarChart = ({ records }) => {
 
     const coor = coorBasedOnCanSize(canvas.width, canvas.height);
 
-    console.log('BarChart > records.length:', records.length);
+    // console.log('BarChart > records.length:', records.length);
     const prWidth = 2;
     const prMaxHeight = 350;
     const prMaxLongRunning = records[0]?.longRunning || 0;

@@ -10,6 +10,17 @@ const COLORS = {
   closed: '#f85149',
 };
 
+const ONE_DAY = 24 * 3600 * 1000;
+
+const getDayOffset = NOW => {
+  const d = new Date(NOW);
+  const h = d.getHours();
+  const m = d.getMinutes();
+  const s = d.getSeconds();
+  const ms = d.getMilliseconds();
+  return (((h * 3600) + (m * 60) + s) * 1000) + ms;
+};
+
 const GanttChart = ({ records }) => {
   const refWrapper = useRef();
   const refCanvas = useRef();
@@ -95,7 +106,7 @@ const GanttChart = ({ records }) => {
     };
     const trackLineIndex = Math.ceil(-coordinateOriginYWithZoom / TRACK_HEIGHT);
     const totalVisibleTracks = TOTAL_TRACKS - trackLineIndex;
-    console.log('TOTAL_TRACKS:', TOTAL_TRACKS, 'trackLineIndex:', trackLineIndex, 'totalVisibleTracks:', totalVisibleTracks);
+    // console.log('TOTAL_TRACKS:', TOTAL_TRACKS, 'trackLineIndex:', trackLineIndex, 'totalVisibleTracks:', totalVisibleTracks);
     for (let i = 0, j = trackLineIndex; i < totalVisibleTracks; i++, j++) {
       const [x1, y1] = coor(-coordinateOriginXWithZoom + 0, TIMELINE_HEIGHT + TRACK_HEIGHT * j);
       const [x2, y2] = coor(-coordinateOriginXWithZoom + ctxWidth, TIMELINE_HEIGHT + TRACK_HEIGHT * j);
@@ -142,7 +153,7 @@ const GanttChart = ({ records }) => {
           ny + (nh / 2) + 5,
         );
         // Draw Rect
-        drawRectWithRadius(ctx, nx, ny, nw, nh, 5, COLORS[pr.state]);
+        drawRectWithRadius(ctx, nx, ny, nw, nh, 5 / zoomFactorX, COLORS[pr.state]);
       };
       // Draw Image
       const imgWidth = 20;
@@ -162,27 +173,33 @@ const GanttChart = ({ records }) => {
 
   const drawTimeline = (
     ctx, coor, canvas,
-    NOW, TIME_RANGE, TIMELINE_HEIGHT, TOTAL_MONTHS,
+    NOW, TIME_RANGE, TIMELINE_HEIGHT, TOTAL_DAYS,
     coordinateOriginXWithZoom, coordinateOriginYWithZoom, ctxWidth, zoomFactorX, zoomFactorY,
   ) => {
     const fixedX = -coordinateOriginXWithZoom + 0;
     const fixedW = -coordinateOriginXWithZoom + ctxWidth;
     const fixedY = -coordinateOriginYWithZoom + 0;
+    // Draw top line
     {
       const [x, y, w, h] = coor(fixedX, fixedY, ctxWidth, TIMELINE_HEIGHT);
       // @TODO: Add gradient color
       drawRectWithRadius(ctx, x, y, w, h, 0, '#0d1117');
     }
+    // Draw middle line
     {
       const [x1, y1] = coor(fixedX, fixedY + TIMELINE_HEIGHT / 2);
       const [x2, y2] = coor(fixedW, fixedY + TIMELINE_HEIGHT / 2);
       drawLine(ctx, x1, y1, x2, y2, 'red', 1 / zoomFactorY);
     }
-    const monthRangeWidth = TIME_RANGE / TOTAL_MONTHS * canvas.width / TIME_RANGE;
-    const totalSection = ctxWidth / monthRangeWidth + 1;
-    const shortLineIndex = Math.floor(-coordinateOriginXWithZoom / monthRangeWidth);
-    for (let i = 0, j = shortLineIndex; i < totalSection; i++, j++) {
-      const p = monthRangeWidth * j;
+    // Draw small vertical short lines
+    const oneDayWidth = ONE_DAY * canvas.width / TIME_RANGE;
+    const totalDaysVisibleOnCanvas = (ctxWidth / oneDayWidth) + 1;
+    const shortLineIndex = Math.floor(fixedX / oneDayWidth);
+    log({fixedX, shortLineIndex, oneDayWidth})
+    const dayOffset = getDayOffset(NOW);
+    const dayOffsetWidth = dayOffset * oneDayWidth / ONE_DAY;
+    for (let i = 0, j = shortLineIndex; i < totalDaysVisibleOnCanvas; i++, j++) {
+      const p = dayOffsetWidth + oneDayWidth * j;
       const lineLength = 5 / zoomFactorY;
       const [x1, y1] = coor(p, fixedY + TIMELINE_HEIGHT / 2 - lineLength);
       const [x2, y2] = coor(p, fixedY + TIMELINE_HEIGHT / 2 + lineLength);
@@ -202,32 +219,33 @@ const GanttChart = ({ records }) => {
 
     const ctxWidth = canvas.width / zoomFactorX;
     const ctxHeight = canvas.height / zoomFactorY;
-    console.log(
-      'zoomFactorX: %f, zoomFactorY: %f',
-      zoomFactorX, zoomFactorY
-    );
-    console.log(
-      'ctxW: %f, ctxH: %f, cW: %f, cH: %f',
-      ctxWidth, ctxHeight, canvas.width, canvas.height,
-    );
+    // console.log(
+    //   'zoomFactorX: %f, zoomFactorY: %f',
+    //   zoomFactorX, zoomFactorY
+    // );
+    // console.log(
+    //   'ctxW: %f, ctxH: %f, cW: %f, cH: %f',
+    //   ctxWidth, ctxHeight, canvas.width, canvas.height,
+    // );
 
     const coordinateOriginXWithZoom = coordinateOriginX / zoomFactorX;
     const coordinateOriginYWithZoom = coordinateOriginY / zoomFactorY;
 
     const canvasOriginX = coordinateOriginXWithZoom + (canvas.width - (canvas.width / zoomFactorX));
     const canvasOriginY = coordinateOriginYWithZoom + (canvas.height - (canvas.height / zoomFactorY));
-    console.log({
-      canvasOriginX,
-      canvasOriginY,
-    });
+    // console.log({
+    //   canvasOriginX,
+    //   canvasOriginY,
+    // });
     // ctx.clearRect(0, 0, canvas.width, canvas.height);
     const coor = coorBasedOnCanSize(canvasOriginX, canvasOriginY, canvas.width, canvas.height);
 
     const NOW = Date.now();
     const TIMELINE_HEIGHT = 100 / zoomFactorY;
     // const TIMELINE_HEIGHT = 0;
-    const TOTAL_MONTHS = 2;
-    const TIME_RANGE = TOTAL_MONTHS * 30 * 24 * 3600 * 1000;
+    const TOTAL_MONTHS = 1;
+    const TOTAL_DAYS = TOTAL_MONTHS * 30;
+    const TIME_RANGE = TOTAL_DAYS * ONE_DAY;
     const TRACK_HEIGHT = 40;
     const TRACK_PADDING_TOP = 5;
     const TRACK_PADDING_BOTTOM = 5;
@@ -277,7 +295,7 @@ const GanttChart = ({ records }) => {
       NOW,
       TIME_RANGE,
       TIMELINE_HEIGHT,
-      TOTAL_MONTHS,
+      TOTAL_DAYS,
       coordinateOriginXWithZoom,
       coordinateOriginYWithZoom,
       ctxWidth,
@@ -297,13 +315,13 @@ const GanttChart = ({ records }) => {
     coordinateOriginY,
   ]);
 
-  useEffect(() => {
-    console.log('isShiftPressed:', isShiftPressed);
-  }, [isShiftPressed]);
+  // useEffect(() => {
+  //   console.log('isShiftPressed:', isShiftPressed);
+  // }, [isShiftPressed]);
 
-  useEffect(() => {
-    console.log('isAltPressed:', isAltPressed);
-  }, [isAltPressed]);
+  // useEffect(() => {
+  //   console.log('isAltPressed:', isAltPressed);
+  // }, [isAltPressed]);
 
   const onKeyDown = e => {
     if (e.key === 'Shift') {
