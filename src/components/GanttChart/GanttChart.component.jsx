@@ -91,6 +91,12 @@ const GanttChart = ({ records }) => {
     ctx.lineWidth = 1;
   };
 
+  const drawText = (ctx, text, x, y, size, color) => {
+    ctx.font = `${size}px Segoe UI`;
+    ctx.fillStyle = color;
+    ctx.fillText(text, x, y);
+  };
+
   const drawTracks = (
     ctx, coor, TOTAL_TRACKS, TRACK_HEIGHT, TIMELINE_HEIGHT,
     coordinateOriginXWithZoom, coordinateOriginYWithZoom, ctxWidth, zoomFactorY
@@ -142,15 +148,15 @@ const GanttChart = ({ records }) => {
       );
       const drawTheRest = () => {
         // Draw Text
-        const fontSize = 14;
-        ctx.font = `${fontSize}px Segoe UI`;
-        ctx.fillStyle = "white";
         const charWidth = 7;
-        ctx.fillText(
+        drawText(
+          ctx,
           getReadableTimePeriodShorter(pr.longRunning),//.slice(0, (-nw - (CELL_PADDING_LEFT - CELL_PADDING_RIGHT)) / charWidth),
           // `${pr.longRunning} - ${(new Date(pr.closed_at).getTime() || NOW) - new Date(pr.created_at).getTime()}`,//.slice(0, (-nw - (CELL_PADDING_LEFT - CELL_PADDING_RIGHT)) / charWidth),
           nx + nw + CELL_PADDING_RIGHT,
           ny + (nh / 2) + 5,
+          14,
+          "white",
         );
         // Draw Rect
         drawRectWithRadius(ctx, nx, ny, nw, nh, 5 / zoomFactorX, COLORS[pr.state]);
@@ -193,17 +199,21 @@ const GanttChart = ({ records }) => {
     }
     // Draw small vertical short lines
     const oneDayWidth = ONE_DAY * canvas.width / TIME_RANGE;
-    const totalDaysVisibleOnCanvas = (ctxWidth / oneDayWidth) + 1;
+    const totalDaysVisibleOnCanvas = (ctxWidth / oneDayWidth);
     const shortLineIndex = Math.floor(fixedX / oneDayWidth);
     log({fixedX, shortLineIndex, oneDayWidth})
     const dayOffset = getDayOffset(NOW);
     const dayOffsetWidth = dayOffset * oneDayWidth / ONE_DAY;
-    for (let i = 0, j = shortLineIndex; i < totalDaysVisibleOnCanvas; i++, j++) {
+    for (let i = 0, j = shortLineIndex; i <= totalDaysVisibleOnCanvas; i++, j++) {
       const p = dayOffsetWidth + oneDayWidth * j;
       const lineLength = 5 / zoomFactorY;
       const [x1, y1] = coor(p, fixedY + TIMELINE_HEIGHT / 2 - lineLength);
       const [x2, y2] = coor(p, fixedY + TIMELINE_HEIGHT / 2 + lineLength);
       drawLine(ctx, x1, y1, x2, y2, 'yellow', 1 / zoomFactorX);
+      
+      // Draw day of the month
+      const dayOfMonth = new Date(NOW - (ONE_DAY * j)).getDate();
+      drawText(ctx, dayOfMonth, x1 + (oneDayWidth / 3), y1 + 15, 14, "white");
     }
   };
 
