@@ -1,3 +1,14 @@
+export const log = msg =>
+  console.log(
+    Object
+      .entries(msg)
+      .reduce(
+        (acc, [label, value]) => ([
+          ...acc,
+          `${label}: ${value}`,
+        ]), [])
+      .join(', ')
+  );
 
 export const getReadableTimePeriodShorter = milliseconds => {
   const units = [
