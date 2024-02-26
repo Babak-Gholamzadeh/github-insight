@@ -119,7 +119,7 @@ const GanttChart = ({ records }) => {
     ctx.strokeStyle = color;
     ctx.lineWidth = lineWidth;
     ctx.shadowColor = color;
-    ctx.shadowBlur = lineWidth * 5;
+    ctx.shadowBlur = 10;
     ctx.stroke();
     ctx.lineWidth = 1;
     ctx.shadowColor = 'transparent';
@@ -127,7 +127,29 @@ const GanttChart = ({ records }) => {
   };
 
   const drawText = (ctx, text, x, y, color, size, weight = 'normal') => {
+    ctx.save();
+    ctx.scale(1, 1);
     ctx.font = `${weight} ${size}px Segoe UI`;
+    ctx.fillStyle = color;
+    ctx.fillText(text, x, y);
+    ctx.restore();
+  };
+
+  const drawNiceText = (ctx, text, x, y, mw, color, size, align = 'center', weight = 'normal') => {
+    ctx.font = `${weight} ${size}px Segoe UI`;
+    let textWidth = ctx.measureText(text).width;
+    log({ p: 1, size, x, mw, tw: textWidth });
+    if (textWidth > mw) {
+      size = size * mw / textWidth;
+      ctx.font = `${weight} ${size}px Segoe UI`;
+      textWidth = ctx.measureText(text).width;
+    }
+    log({ p: 2, size, x, mw, tw: textWidth });
+    if (align === 'center') {
+      x += (mw / 2) - (textWidth / 2);
+    }
+    log({ p: 3, size, x, mw, tw: textWidth });
+
     ctx.fillStyle = color;
     ctx.fillText(text, x, y);
   };
@@ -221,7 +243,7 @@ const GanttChart = ({ records }) => {
     const fixedW = -coordinateOriginXWithZoom + ctxWidth;
     const fixedY = -coordinateOriginYWithZoom + 0;
     const fixedH = -coordinateOriginYWithZoom + ctxHeight;
-    const middleLineY = fixedY + TIMELINE_HEIGHT * .9;
+    const timeLineY = fixedY + TIMELINE_HEIGHT;
     const monthLineY = fixedY + TIMELINE_HEIGHT * .4;
     const yearLineY = fixedY + TIMELINE_HEIGHT * .1;
     // Draw top line
@@ -233,9 +255,9 @@ const GanttChart = ({ records }) => {
     }
     // Draw middle line
     {
-      const [x1, y1] = coor(fixedX, middleLineY);
-      const [x2, y2] = coor(fixedW, middleLineY);
-      drawLine(ctx, x1, y1, x2, y2, '#444', 1 / zoomFactorY);
+      const [x1, y1] = coor(fixedX, timeLineY);
+      const [x2, y2] = coor(fixedW, timeLineY);
+      drawLine(ctx, x1, y1, x2, y2, 'yellow', 1 / zoomFactorY);
     }
     // Draw small vertical short lines
     const oneDayWidth = ONE_DAY * canvas.width / TIME_RANGE;
@@ -260,21 +282,21 @@ const GanttChart = ({ records }) => {
       const p = dayOffsetWidth + oneDayWidth * j;
 
       // Draw short line
-      const lineLength = (isStartOfMonth ? 6 : 3) / zoomFactorY;
+      const lineLength = (isStartOfMonth ? 20 : 10) / zoomFactorY;
       const lineColor = '#aaa';
-      const lineWidth = (isStartOfMonth ? 3 : 1) * zoomFactorX;
+      const lineWidth = (isStartOfMonth ? 2 : 1) * zoomFactorX;
       if (isStartOfYear) {
         const [x1, y1] = coor(p, fixedY);
         const [x2, y2] = coor(p, fixedH);
         drawLine(ctx, x1, y1, x2, y2, MONTH_COLOR(.2)[month], 1 / zoomFactorX);
       } else {
-        const [x1, y1] = coor(p, middleLineY - lineLength);
-        const [x2, y2] = coor(p, middleLineY + lineLength);
+        const [x1, y1] = coor(p, timeLineY - lineLength);
+        const [x2, y2] = coor(p, timeLineY);
         drawLine(ctx, x1, y1, x2, y2, lineColor, lineWidth / zoomFactorX);
       }
 
       // Draw day of the month
-      const [tX, tY] = coor(p - 15, middleLineY - 20);
+      const [tX, tY] = coor(p - 15, timeLineY * .7);
       drawText(ctx, day, tX, tY, "#aaa", 10);
 
       // Draw month section
@@ -462,10 +484,23 @@ const GanttChart = ({ records }) => {
 
     // Draw Timeline Cursor
     {
+      // Draw the line
       const x = (-coordinateOriginX + timelineCursorX) / zoomFactorX;
-      const [x1, y1] = coor(x, -coordinateOriginYWithZoom);
-      const [x2, y2] = coor(x, -coordinateOriginYWithZoom + ctxHeight);
-      drawGlowyLine(ctx, x1, y1, x2, y2, '#2e81f7', 1 / zoomFactorX);
+      const y = -coordinateOriginYWithZoom + TIMELINE_HEIGHT;
+      {
+        const [x1, y1] = coor(x, y);
+        const [x2, y2] = coor(x, -coordinateOriginYWithZoom + ctxHeight);
+        drawGlowyLine(ctx, x1, y1, x2, y2, '#1d6bd5', .61 / zoomFactorX);
+      }
+      // Draw the exact time
+      const w = 50 / zoomFactorX;
+      const h = 18 / zoomFactorY;
+      const [rx, ry, rw, rh] = coor(x - (w / 2), y, w, -h);
+      drawRectWithRadius(ctx, rx, ry, rw, rh, 2, '#1d6bd5');
+      const time = '12:34:56';
+      const [tx, ty] = coor(x + (w / 2), y - (h / 2) - (8 / zoomFactorY / 2));
+      // drawText(ctx, time, tx, ty, 'white', 11);
+      drawNiceText(ctx, time, tx, ty, w, 'white', 11);
     }
 
 
