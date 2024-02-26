@@ -201,7 +201,7 @@ const PullRequestList = ({ records }) => {
 
 const auth = {
   organization: 'nodejs',
-  token: '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',
+  token: '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',
 };
 
 // const PullRequests = ({ auth }) => {

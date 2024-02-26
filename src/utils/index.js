@@ -1,13 +1,15 @@
 export const log = msg =>
   console.log(
-    Object
-      .entries(msg)
-      .reduce(
-        (acc, [label, value]) => ([
-          ...acc,
-          `${label}: ${value}`,
-        ]), [])
-      .join(', ')
+    typeof (msg) === 'object'
+      ? Object
+        .entries(msg)
+        .reduce(
+          (acc, [label, value]) => ([
+            ...acc,
+            `${label}: ${value}`,
+          ]), [])
+        .join(', ')
+      : msg
   );
 
 export const getRandomColor = (seed) => {
