@@ -97,8 +97,8 @@ export class Mouse {
 
 class EngineEntity {
   constructor({ tag, position } = {}) {
-    console.log('Engine > Constructor:', this.constructor.name);
     this.tag = tag || this.constructor.name;
+    console.log('Engine > Constructor:', this.tag);
     this.transform = {
       position: position || [0, 0, 0], // x, y, z (depth)
       scale: [1, 1, 1],
@@ -144,6 +144,7 @@ class EngineEntity {
   }
 
   updateObjects(dt) {
+    // log({ updateObjects: 1 });
     this.update(dt);
     for (const object of this.getObjectsByDepth()) {
       object.updateObjects(dt);
@@ -154,6 +155,7 @@ class EngineEntity {
   update(dt) { }
 
   async renderObjects() {
+    // log({ renderObjects: 1 });
     await this.render();
     for (const object of this.getObjectsByDepth()) {
       await object.renderObjects();
@@ -290,6 +292,29 @@ export class Camera extends EngineEntity {
     this.ctx.fillStyle = color;
     this.ctx.fillText(text, ...posOnViewport);
   }
+
+  renderLine({
+    color = '#fff',
+    lineWidth = 1,
+    position = [0, 0],
+    vertices = [[0, 0]],
+  } = {}) {
+    const verticesOnViewport = vertices
+      .map(vectex => this.getPositionOnViewport([
+        position[0] + vectex[0],
+        position[1] + vectex[1],
+      ]));
+    // log({ verticesOnViewport });
+    this.ctx.save();
+    this.ctx.beginPath();
+    this.ctx.moveTo(...verticesOnViewport[0]);
+    for (let i = 1; i < verticesOnViewport.length; i++)
+      this.ctx.lineTo(...verticesOnViewport[i]);
+    this.ctx.strokeStyle = color;
+    this.ctx.lineWidth = lineWidth;
+    this.ctx.stroke();
+    this.ctx.restore();
+  }
 }
 
 export class ObjectGroup extends EngineEntity {
@@ -301,16 +326,13 @@ export class ObjectGroup extends EngineEntity {
 
 export class Line extends ObjectGroup {
   async render() {
-    const vertices = this.vertices;
-    this.scene.camera.ctx.save();
-    this.scene.camera.ctx.beginPath();
-    this.scene.camera.ctx.moveTo(...vertices[0]);
-    for (let i = 1; i < vertices.length; i++)
-      this.scene.camera.ctx.lineTo(...vertices[i]);
-    this.scene.camera.ctx.strokeStyle = this.color;
-    this.scene.camera.ctx.lineWidth = this.lineWidth;
-    this.scene.camera.ctx.stroke();
-    this.scene.camera.ctx.restore();
+    const position = this.getPosition();
+    this.scene.camera.renderLine({
+      color: this.color,
+      lineWidth: this.lineWidth,
+      position,
+      vertices: this.vertices,
+    });
   }
 }
 

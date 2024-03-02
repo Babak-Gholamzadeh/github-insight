@@ -69,38 +69,87 @@ const GanttChart = ({ records }) => {
     const camera = refCamera.current = scene.createCamera({
       ctx, viewport,
       update(dt) {
+        // const { scrollDelta } = this.scene.mouse;
+        // if (this.scene.keyboard.isKeyDown('shift')) {
+        //   this.transform.position[0] += scrollDelta * dt * 1000;
+        // }
+        // if (this.scene.keyboard.isKeyDown('alt')) {
+        //   this.transform.position[1] += scrollDelta * dt * 1000;
+        // }
+      },
+    }, {
+      position: [
+        -viewport.size[0] / 2,
+        viewport.size[1] / 2,
+        Infinity,
+      ],
+    });
+
+    refEngine.current.run();
+
+    log({ viewSize: viewport.size });
+
+    const timeline = refTimeline.current = camera.createObject(ObjectGroup, {
+      secondRange: 100,
+      update(dt) {
+        const camSize = this.scene.camera.getSize();
+        this.size = [
+          camSize[0],
+          camSize[1] * .1,
+        ];
+        this.transform.position = [
+          camSize[0] / 2,
+          -camSize[1] / 2,
+        ];
+
         const { scrollDelta } = this.scene.mouse;
         if (this.scene.keyboard.isKeyDown('shift')) {
-          this.transform.position[0] += scrollDelta * dt * 1000;
+          this.secondRange += scrollDelta * dt * 200;
         }
         if (this.scene.keyboard.isKeyDown('alt')) {
           this.transform.position[1] += scrollDelta * dt * 1000;
         }
       },
     }, {
-      position: [
-        -(viewport.size[0] / 2),
-        viewport.size[1] / 2,
-      ],
+      tag: 'timeline',
     });
 
-    refEngine.current.run();
-
-    const timeline = refTimeline.current = scene.createObject(Rect, {
+    const timelineBox = timeline.createObject(Rect, {
       backgroundColor: '#faa',
       update(dt) {
-        this.size = [
-          this.scene.camera.viewport.size[0],
-          this.scene.camera.viewport.size[1] * .1,
-        ];
-        this.transform.position = [
-          this.scene.camera.transform.position[0] + this.scene.camera.viewport.size[0] / 2,
-          this.scene.camera.transform.position[1] - this.scene.camera.viewport.size[1] / 2,
-          10,
-        ];
+        this.size = this.parent.size;
       }
     }, {
-      tag: 'timeline',
+      tag: 'timeline-box',
+    });
+
+    const timelineShortLines = timeline.createObject(ObjectGroup, {
+      size: [0, 0],
+      update(dt) {
+        this.size = this.parent.size;
+      },
+      async render() {
+        const camSize = this.scene.camera.getSize();
+        const position = this.getPosition();
+        const secondRange = this.parent.secondRange;
+        for (let i = 0; i < camSize[0] / secondRange; i++) {
+          const linePosition = [
+            position[0] - (i * secondRange),
+            position[1] + this.size[1],
+          ];
+          this.scene.camera.renderLine({
+            position: linePosition,
+            vertices: [
+              [0, 0],
+              [0, -10],
+            ],
+            color: 'blue',
+            lineWidth: 1,
+          });
+        }
+      }
+    }, {
+      tag: 'timeline-short-lines',
     });
 
     const pr = scene.createObject(Rect, {
@@ -137,6 +186,18 @@ const GanttChart = ({ records }) => {
         ],
       },
     );
+
+    scene.createObject(Line, {
+      vertices: [
+        [0, 0],
+        [200, 100],
+      ],
+      color: 'red',
+      lineWidth: 2,
+    }, {
+      position: [-400, 300],
+    });
+
   }, [ctx, viewport]);
 
 
