@@ -89,8 +89,10 @@ const GanttChart = ({ records }) => {
 
     log({ viewSize: viewport.size });
 
+    const MAX_SECOND_GAP = 10;
+
     const timeline = refTimeline.current = camera.createObject(ObjectGroup, {
-      secondRange: 100,
+      currSecGap: MAX_SECOND_GAP,
       update(dt) {
         const camSize = this.scene.camera.getSize();
         this.size = [
@@ -103,8 +105,8 @@ const GanttChart = ({ records }) => {
         ];
 
         const { scrollDelta } = this.scene.mouse;
-        if (this.scene.keyboard.isKeyDown('shift')) {
-          this.secondRange += scrollDelta * dt * 200;
+        if (this.scene.keyboard.isKeyDown('shift') && scrollDelta) {
+          this.currSecGap += this.currSecGap * (scrollDelta * .1);
         }
         if (this.scene.keyboard.isKeyDown('alt')) {
           this.transform.position[1] += scrollDelta * dt * 1000;
@@ -114,8 +116,9 @@ const GanttChart = ({ records }) => {
       tag: 'timeline',
     });
 
-    const timelineBox = timeline.createObject(Rect, {
-      backgroundColor: '#faa',
+    timeline.createObject(Rect, {
+      // backgroundColor: '#faa',
+      backgroundColor: '#000',
       update(dt) {
         this.size = this.parent.size;
       }
@@ -123,7 +126,7 @@ const GanttChart = ({ records }) => {
       tag: 'timeline-box',
     });
 
-    const timelineShortLines = timeline.createObject(ObjectGroup, {
+    timeline.createObject(ObjectGroup, {
       size: [0, 0],
       update(dt) {
         this.size = this.parent.size;
@@ -131,22 +134,63 @@ const GanttChart = ({ records }) => {
       async render() {
         const camSize = this.scene.camera.getSize();
         const position = this.getPosition();
-        const secondRange = this.parent.secondRange;
-        for (let i = 0; i < camSize[0] / secondRange; i++) {
+
+        const currSecGap = this.parent.currSecGap;
+        const currMinGap = currSecGap * 60;
+        const currHourGap = currMinGap * 60;
+        const currDayGap = currHourGap * 24;
+
+        const totalSeconds = camSize[0] / currSecGap;
+
+        const [currRange, currGap, currStep, nextStep] = (() => {
+          if (currSecGap >= 2)
+            return ['Sec', currSecGap, 1, 60];
+          if (currMinGap >= 2)
+            return ['Min', currMinGap, 60, 60];
+          if (currHourGap >= 2)
+            return ['Hour', currHourGap, 60 * 60, 24];
+          if (currDayGap >= 2)
+            return ['Day', currDayGap, 24 * 60 * 60, 30];
+          return ['N/A', 0, 0];
+        })();
+
+        const totalLines = Math.ceil(totalSeconds / currStep);
+        const transparency = currGap > 10 ? 255 : Math.floor((currGap - 1) / 10 * 255);
+        const height = currGap > 10 ? 10 : ((currGap - 1) / 10 * 10);
+        const width = currGap > 10 ? 1 : ((currGap - 1) / 10 * 1);
+
+        log({ currSecGap, currRange, currGap, currStep, nextStep, transparency, height, width, totalLines });
+
+
+        for (let i = 0; i < totalLines; i++) {
           const linePosition = [
-            position[0] - (i * secondRange),
+            position[0] - (i * currGap),
             position[1] + this.size[1],
           ];
+          const color = !(i % nextStep)
+            ? 'white'
+            : `rgb(${transparency}, ${transparency}, ${transparency})`;
+
+          const lineHeight = !(i % nextStep)
+            ? 10 + height
+            : 10;
+
+          const lineWidth = !(i % nextStep)
+            ? 1
+            : width;
+
           this.scene.camera.renderLine({
             position: linePosition,
             vertices: [
               [0, 0],
-              [0, -10],
+              [0, -lineHeight],
             ],
-            color: 'blue',
-            lineWidth: 1,
+            color: 'white',
+            lineWidth,
           });
+
         }
+
       }
     }, {
       tag: 'timeline-short-lines',
