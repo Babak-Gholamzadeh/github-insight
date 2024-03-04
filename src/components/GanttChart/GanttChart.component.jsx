@@ -32,6 +32,7 @@ const GanttChart = ({ records }) => {
   const [viewport, setViewport] = useState({ size: [0, 0] });
   const [ctx, setCtx] = useState();
   const [NOW, setNOW] = useState(Date.now());
+  // let NOW = Date.now();
 
   const setupViewport = () => {
     const wrapperStyle = window.getComputedStyle(refWrapper.current);
@@ -68,14 +69,25 @@ const GanttChart = ({ records }) => {
     const scene = refScene.current;
     const camera = refCamera.current = scene.createCamera({
       ctx, viewport,
+      dragPos: null,
       update(dt) {
-        // const { scrollDelta } = this.scene.mouse;
-        // if (this.scene.keyboard.isKeyDown('shift')) {
-        //   this.transform.position[0] += scrollDelta * dt * 1000;
-        // }
-        // if (this.scene.keyboard.isKeyDown('alt')) {
-        //   this.transform.position[1] += scrollDelta * dt * 1000;
-        // }
+        const mouse = this.scene.mouse;
+        if (!this.dragPos && mouse.isBtnDown('left')) {
+          const mousePos = mouse.getPositionOnViewport();
+          this.dragPos = mousePos;
+        }
+
+        if (mouse.isBtnUp('left')) {
+          this.dragPos = null;
+        }
+
+        if (this.dragPos) {
+          const currMousePos = mouse.getPositionOnViewport();
+          const diffX = currMousePos[0] - this.dragPos[0];
+          this.transform.position[0] -= diffX;
+          this.dragPos = currMousePos;
+        }
+
       },
     }, {
       position: [
@@ -89,10 +101,10 @@ const GanttChart = ({ records }) => {
 
     log({ viewSize: viewport.size });
 
-    const MAX_SECOND_GAP = 10;
+    const MAX_MS_WIDTH = 10;
 
     const timeline = refTimeline.current = camera.createObject(ObjectGroup, {
-      currSecGap: MAX_SECOND_GAP,
+      currMSWidth: MAX_MS_WIDTH * .0001,
       update(dt) {
         const camSize = this.scene.camera.getSize();
         this.size = [
@@ -106,7 +118,7 @@ const GanttChart = ({ records }) => {
 
         const { scrollDelta } = this.scene.mouse;
         if (this.scene.keyboard.isKeyDown('shift') && scrollDelta) {
-          this.currSecGap += this.currSecGap * (scrollDelta * .1);
+          this.currMSWidth += this.currMSWidth * (scrollDelta * .1);
         }
         if (this.scene.keyboard.isKeyDown('alt')) {
           this.transform.position[1] += scrollDelta * dt * 1000;
@@ -126,71 +138,209 @@ const GanttChart = ({ records }) => {
       tag: 'timeline-box',
     });
 
+    const getCurrDatePos = (msWidth, posX) => {
+      const backInTimeMSs = posX / msWidth;
+      const date = new Date(NOW + backInTimeMSs);
+        
+      const ms = {
+        value: date.getMilliseconds(),
+        min: 0,
+        leftHandWidth: msWidth,
+        fullWidth: msWidth,
+        begin: posX - msWidth,
+        end: posX,
+      };
+    
+      const sec = {
+        value: date.getSeconds(),
+        min: 0,
+        leftHandWidth: ms.value * ms.fullWidth + ms.leftHandWidth,
+        fullWidth: ms.fullWidth * 1000,
+        get begin() {
+          return posX - this.leftHandWidth;
+        },
+        get end() {
+          return posX + (this.fullWidth - this.leftHandWidth);
+        },
+      };
+    
+      const min = {
+        value: date.getMinutes(),
+        min: 0,
+        leftHandWidth: sec.value * sec.fullWidth + sec.leftHandWidth,
+        fullWidth: sec.fullWidth * 60,
+        get begin() {
+          return posX - this.leftHandWidth;
+        },
+        get end() {
+          return posX + (this.fullWidth - this.leftHandWidth);
+        },
+      };
+    
+      const hour = {
+        value: date.getHours(),
+        min: 0,
+        leftHandWidth: min.value * min.fullWidth + min.leftHandWidth,
+        fullWidth: min.fullWidth * 60,
+        get begin() {
+          return posX - this.leftHandWidth;
+        },
+        get end() {
+          return posX + (this.fullWidth - this.leftHandWidth);
+        },
+      };
+    
+      const day = {
+        value: date.getDate(),
+        min: 1,
+        leftHandWidth: hour.value * hour.fullWidth + hour.leftHandWidth,
+        fullWidth: hour.fullWidth * 24,
+        get begin() {
+          return posX - this.leftHandWidth;
+        },
+        get end() {
+          return posX + (this.fullWidth - this.leftHandWidth);
+        },
+      };
+    
+      const month = {
+        value: date.getMonth(),
+        min: 0,
+        leftHandWidth: Math.max(day.value - 1, 0) * day.fullWidth + day.leftHandWidth,
+        get fullWidth() {
+          return getNumOfDaysPerMonth(year.value, this.value) * day.fullWidth;
+        },
+        get begin() {
+          return posX - this.leftHandWidth;
+        },
+        get end() {
+          return posX + (this.fullWidth - this.leftHandWidth);
+        },
+      };
+    
+      const year = {
+        value: date.getFullYear(),
+        min: 0,
+        get leftHandWidth() {
+          return Array
+            .from({
+              length: month.value
+            })
+            .reduce((days, _, month) => days + getNumOfDaysPerMonth(this.value, month), 0) *
+            day.fullWidth +
+            month.leftHandWidth;
+        },
+        get fullWidth() {
+          return getNumOfDaysPerYear(this.value) * day.fullWidth;
+        },
+        get begin() {
+          return posX - this.leftHandWidth;
+        },
+        get end() {
+          return posX + (this.fullWidth - this.leftHandWidth);
+        },
+      };
+    
+      return {
+        ms,
+        sec,
+        min,
+        hour,
+        day,
+        month,
+        year,
+      };
+    };
+
+    const getNumOfDaysPerMonth = (year, month) =>
+      new Date(year, month + 1, 0).getDate();
+
+    const getNumOfDaysPerYear = year => Array
+      .from({ length: 12 })
+      .reduce((days, _, month) =>
+        days + getNumOfDaysPerMonth(year, month), 0);
+
+    const minVisibleWidth = 2;
+
+    const getMinimumVisibleTimeRange = msWidth => {
+      const secWidth = msWidth * 1000;
+      const minWidth = secWidth * 60;
+      const hourWidth = minWidth * 60;
+      const dayWidth = hourWidth * 24;
+      const monthWidth = dayWidth * 30;
+      const yearWidth = monthWidth * 12;
+      if (msWidth >= minVisibleWidth)
+        return { width: msWidth, name: 'ms' };
+      if (secWidth >= minVisibleWidth)
+        return { width: secWidth, name: 'sec' };
+      if (minWidth >= minVisibleWidth)
+        return { width: minWidth, name: 'min' };
+      if (hourWidth >= minVisibleWidth)
+        return { width: hourWidth, name: 'hour' };
+      if (dayWidth >= minVisibleWidth)
+        return { width: dayWidth, name: 'day' };
+      if (monthWidth >= minVisibleWidth)
+        return { width: monthWidth, name: 'month' };
+      // if (yearWidth >= minVisibleWidth)
+      return { width: yearWidth, name: 'year' };
+    };
+
     timeline.createObject(ObjectGroup, {
       size: [0, 0],
       update(dt) {
         this.size = this.parent.size;
       },
       async render() {
+        const { currMSWidth } = this.parent;
         const camSize = this.scene.camera.getSize();
-        const position = this.getPosition();
+        const camEdgePos = this.scene.camera.getEdgePositionsOnScene();
+        const startPosition = this.getPositionOnScene();
 
-        const currSecGap = this.parent.currSecGap;
-        const currMinGap = currSecGap * 60;
-        const currHourGap = currMinGap * 60;
-        const currDayGap = currHourGap * 24;
+        const minimumVisibleTimeRange = getMinimumVisibleTimeRange(currMSWidth);
+        log({ minimumVisibleTimeRange: minimumVisibleTimeRange.name });
+        let i = 1000;
+        let linePosX = startPosition[0];
+        log({ linePosX, currMSWidth });
+        let count = 0;
+        while (true && i--) {
+          count++;
+          const {
+            [minimumVisibleTimeRange.name]: currDatePos,
+          } = getCurrDatePos(currMSWidth, linePosX);
+          linePosX = currDatePos.begin;
+          if (linePosX < camEdgePos.l - currDatePos.fullWidth)
+            break;
 
-        const totalSeconds = camSize[0] / currSecGap;
-
-        const [currRange, currGap, currStep, nextStep] = (() => {
-          if (currSecGap >= 2)
-            return ['Sec', currSecGap, 1, 60];
-          if (currMinGap >= 2)
-            return ['Min', currMinGap, 60, 60];
-          if (currHourGap >= 2)
-            return ['Hour', currHourGap, 60 * 60, 24];
-          if (currDayGap >= 2)
-            return ['Day', currDayGap, 24 * 60 * 60, 30];
-          return ['N/A', 0, 0];
-        })();
-
-        const totalLines = Math.ceil(totalSeconds / currStep);
-        const transparency = currGap > 10 ? 255 : Math.floor((currGap - 1) / 10 * 255);
-        const height = currGap > 10 ? 10 : ((currGap - 1) / 10 * 10);
-        const width = currGap > 10 ? 1 : ((currGap - 1) / 10 * 1);
-
-        log({ currSecGap, currRange, currGap, currStep, nextStep, transparency, height, width, totalLines });
-
-
-        for (let i = 0; i < totalLines; i++) {
           const linePosition = [
-            position[0] - (i * currGap),
-            position[1] + this.size[1],
+            linePosX,
+            startPosition[1] + this.size[1],
           ];
-          const color = !(i % nextStep)
-            ? 'white'
-            : `rgb(${transparency}, ${transparency}, ${transparency})`;
 
-          const lineHeight = !(i % nextStep)
-            ? 10 + height
-            : 10;
-
-          const lineWidth = !(i % nextStep)
-            ? 1
-            : width;
+          const color = (currDatePos.value === currDatePos.min)
+            ? 'red'
+            : 'white';
 
           this.scene.camera.renderLine({
             position: linePosition,
             vertices: [
               [0, 0],
-              [0, -lineHeight],
+              [0, -10],
             ],
-            color: 'white',
-            lineWidth,
+            color,
+            lineWidth: 1,
           });
 
+          this.scene.camera.renderText({
+            text: currDatePos.value,
+            color: 'white',
+            size: 10,
+            position: [
+              linePosition[0] + (currDatePos.fullWidth / 2),
+              linePosition[1] - 20,
+            ],
+          });
         }
-
+        log({ count, linePosX });
       }
     }, {
       tag: 'timeline-short-lines',
@@ -260,6 +410,8 @@ const GanttChart = ({ records }) => {
         onKeyDown={e => refKeyboard.current.setKeyState({ [e.key.toLowerCase()]: true })}
         onKeyUp={e => refKeyboard.current.setKeyState({ [e.key.toLowerCase()]: false })}
         onWheel={e => refMouse.current.setScrollDelta(Math.sign(e.deltaY * -1))}
+        onMouseDown={() => refMouse.current.setBtnState({ left: true })}
+        onMouseUp={() => refMouse.current.setBtnState({ left: false })}
         onMouseMove={e => refMouse.current.setPosition([
           e.clientX - e.target.getBoundingClientRect().left,
           e.clientY - e.target.getBoundingClientRect().top,

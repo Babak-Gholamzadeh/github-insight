@@ -79,18 +79,46 @@ export class Mouse {
   constructor() {
     this.position = [0, 0];
     this.scrollDelta = 0;
+    this.states = {};
   }
 
   setPosition(newPosition = [0, 0]) {
     this.position = newPosition;
   }
 
+  getPositionOnViewport() {
+    return this.position;
+  }
+
+  getPositionOnScene() {
+    const position = this.getPositionOnViewport();
+    const camPos = this.scene.camera.getPositionOnScene();
+    const camSize = this.scene.camera.getSize();
+    return [
+      camPos[0] - ((camSize[0] / 2) - position[0]),
+      camPos[1] + ((camSize[1] / 2) - position[1]),
+    ];
+  }
+
   setScrollDelta(newDelta = 0) {
     this.scrollDelta = newDelta;
   }
 
+  setBtnState(newStates = {}) {
+    Object.assign(this.states, newStates);
+  }
+
+  isBtnDown(btn) {
+    return !!this.states[btn];
+  }
+
+  isBtnUp(btn) {
+    return !this.states[btn];
+  }
+
   reset() {
-    this.position = [0, 0];
+    // this.position = [0, 0];
+    // this.states = {};
     this.scrollDelta = 0;
   }
 }
@@ -107,9 +135,9 @@ class EngineEntity {
     this.objects = [];
   }
 
-  getPosition() {
+  getPositionOnScene() {
     const thisPostion = this.transform.position.slice(0, 2);
-    const parentPosition = this.parent.getPosition();
+    const parentPosition = this.parent.getPositionOnScene();
     return [
       parentPosition[0] + thisPostion[0],
       parentPosition[1] + thisPostion[1],
@@ -172,7 +200,7 @@ export class Scene extends EngineEntity {
     Object.assign(this, sceneOptions);
   }
 
-  getPosition() {
+  getPositionOnScene() {
     return this.transform.position.slice(0, 2);
   }
 
@@ -199,6 +227,7 @@ export class Scene extends EngineEntity {
 
   addKeyboard(keyboard) {
     this.keyboard = keyboard;
+    keyboard.scene = this;
   }
 
   createMouse(...options) {
@@ -209,11 +238,12 @@ export class Scene extends EngineEntity {
 
   addMouse(mouse) {
     this.mouse = mouse;
+    mouse.scene = this;
   }
 
   async render() {
     if (this.backgroundColor) {
-      const { r, b } = this.camera.getEdgePositions();
+      const { r, b } = this.camera.getEdgePositionsOnScene();
       this.camera.renderRoundRect({
         backgroundColor: this.backgroundColor,
         position: [r, b],
@@ -241,7 +271,7 @@ export class Camera extends EngineEntity {
     ];
   }
 
-  getEdgePositions() {
+  getEdgePositionsOnScene() {
     return {
       r: this.transform.position[0] + this.viewport.size[0] / 2,
       l: this.transform.position[0] - this.viewport.size[0] / 2,
@@ -251,7 +281,7 @@ export class Camera extends EngineEntity {
   }
 
   getPositionOnViewport(point) {
-    const camPos = this.getPosition();
+    const camPos = this.getPositionOnScene();
     const camSize = this.getSize();
     return [
       (camSize[0] / 2) + (point[0] - camPos[0]),
@@ -326,7 +356,7 @@ export class ObjectGroup extends EngineEntity {
 
 export class Line extends ObjectGroup {
   async render() {
-    const position = this.getPosition();
+    const position = this.getPositionOnScene();
     this.scene.camera.renderLine({
       color: this.color,
       lineWidth: this.lineWidth,
@@ -351,7 +381,7 @@ export class Rect extends ObjectGroup {
   }
 
   async render() {
-    const position = this.getPosition();
+    const position = this.getPositionOnScene();
     const size = this.getSize();
     this.scene.camera.renderRoundRect({
       backgroundColor: this.backgroundColor,
@@ -370,7 +400,7 @@ export class Text extends ObjectGroup {
       size: this.size,
       color: this.color,
       text: this.text,
-      position: this.getPosition(),
+      position: this.getPositionOnScene(),
     });
   }
 }
