@@ -36,7 +36,10 @@ export class Engine {
     console.log('Engine > run');
     this.fps.init();
 
+    let frameCount = 0;
+
     (async function engineLoop() {
+      frameCount++;
       const dt = this.fps.getDelta();
 
       this.scene.camera.clearViewport();
@@ -48,6 +51,8 @@ export class Engine {
       // this.scene.keyboard?.reset();
       this.scene.mouse?.reset();
 
+      // await new Promise(res => setTimeout(res, 2000));
+      log({ frameCount });
       requestAnimationFrame(engineLoop.bind(this));
     }).call(this);
   }
@@ -154,15 +159,17 @@ class EngineEntity {
     this.objects.push(object);
   }
 
-  getObjectsByDepth() {
+  getObjectsByDepth(direction = 1) {
     return this.objects = this.objects
       .map(o => {
         o.transform.position[2] = o.transform.position[2] ?? 0;
         return o;
       })
-      .sort((a, b) =>
-        a.transform.position[2] ?? 0 - b.transform.position[2] ?? 0
-      );
+      .sort((a, b) => {
+        if (direction)
+          return a.transform.position[2] ?? 0 - b.transform.position[2] ?? 0;
+        return b.transform.position[2] ?? 0 - a.transform.position[2] ?? 0;
+      });
   }
 
   createObject(ObjectType, ...options) {
@@ -172,9 +179,8 @@ class EngineEntity {
   }
 
   updateObjects(dt) {
-    // log({ updateObjects: 1 });
     this.update(dt);
-    for (const object of this.getObjectsByDepth()) {
+    for (const object of this.getObjectsByDepth(0)) {
       object.updateObjects(dt);
     }
   }
@@ -183,7 +189,6 @@ class EngineEntity {
   update(dt) { }
 
   async renderObjects() {
-    // log({ renderObjects: 1 });
     await this.render();
     for (const object of this.getObjectsByDepth()) {
       await object.renderObjects();
@@ -280,7 +285,7 @@ export class Camera extends EngineEntity {
     };
   }
 
-  getPositionOnViewport(point) {
+  convertPosScene2Viewport(point) {
     const camPos = this.getPositionOnScene();
     const camSize = this.getSize();
     return [
@@ -296,7 +301,7 @@ export class Camera extends EngineEntity {
     size = [0, 0],
     radius = 0,
   } = {}) {
-    const posOnViewport = this.getPositionOnViewport(position);
+    const posOnViewport = this.convertPosScene2Viewport(position);
     const sizeOnViewport = size.map(v => -v);
     this.ctx.fillStyle = backgroundColor;
     this.ctx.strokeStyle = borderColor;
@@ -314,12 +319,14 @@ export class Camera extends EngineEntity {
     weight = 100,
     size = 14,
     color = '#000',
+    textAlign = 'left',
     text = '',
     position = [0, 0],
   } = {}) {
-    const posOnViewport = this.getPositionOnViewport(position);
+    const posOnViewport = this.convertPosScene2Viewport(position);
     this.ctx.font = `${weight} ${size}px Segoe UI`;
     this.ctx.fillStyle = color;
+    this.ctx.textAlign = textAlign;
     this.ctx.fillText(text, ...posOnViewport);
   }
 
@@ -330,7 +337,7 @@ export class Camera extends EngineEntity {
     vertices = [[0, 0]],
   } = {}) {
     const verticesOnViewport = vertices
-      .map(vectex => this.getPositionOnViewport([
+      .map(vectex => this.convertPosScene2Viewport([
         position[0] + vectex[0],
         position[1] + vectex[1],
       ]));

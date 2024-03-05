@@ -28,11 +28,11 @@ const GanttChart = ({ records }) => {
   const refKeyboard = useRef();
   const refMouse = useRef();
   const refTimeline = useRef();
+  const refPRs = useRef();
 
   const [viewport, setViewport] = useState({ size: [0, 0] });
   const [ctx, setCtx] = useState();
   const [NOW, setNOW] = useState(Date.now());
-  // let NOW = Date.now();
 
   const setupViewport = () => {
     const wrapperStyle = window.getComputedStyle(refWrapper.current);
@@ -67,10 +67,14 @@ const GanttChart = ({ records }) => {
     log({ uf: `[ctx, viewport]: ${ctx}, ${viewport}` });
     if (!ctx) return;
     const scene = refScene.current;
+    const TIMELINE_HEIGHT = viewport.size[1] * .1;
+
+    // Camera
     const camera = refCamera.current = scene.createCamera({
       ctx, viewport,
       dragPos: null,
       update(dt) {
+        log({updateCM: dt});
         const mouse = this.scene.mouse;
         if (!this.dragPos && mouse.isBtnDown('left')) {
           const mousePos = mouse.getPositionOnViewport();
@@ -84,7 +88,12 @@ const GanttChart = ({ records }) => {
         if (this.dragPos) {
           const currMousePos = mouse.getPositionOnViewport();
           const diffX = currMousePos[0] - this.dragPos[0];
+          const diffY = currMousePos[1] - this.dragPos[1];
           this.transform.position[0] -= diffX;
+          this.transform.position[1] = Math.max(
+            this.transform.position[1] + diffY,
+            this.getSize()[1] / 2 - TIMELINE_HEIGHT,
+          );
           this.dragPos = currMousePos;
         }
 
@@ -92,7 +101,7 @@ const GanttChart = ({ records }) => {
     }, {
       position: [
         -viewport.size[0] / 2,
-        viewport.size[1] / 2,
+        viewport.size[1] / 2 - TIMELINE_HEIGHT,
         Infinity,
       ],
     });
@@ -101,36 +110,62 @@ const GanttChart = ({ records }) => {
 
     log({ viewSize: viewport.size });
 
-    const MAX_MS_WIDTH = 10;
-
-    const timeline = refTimeline.current = camera.createObject(ObjectGroup, {
-      currMSWidth: MAX_MS_WIDTH * .0001,
+    // FPS
+    camera.createObject(Text, {
+      color: 'rgba(255, 255, 255, .7)',
+      size: 12,
+      frameCount: 0,
+      sumDt: 0,
+      fps: 0,
       update(dt) {
-        const camSize = this.scene.camera.getSize();
-        this.size = [
-          camSize[0],
-          camSize[1] * .1,
-        ];
-        this.transform.position = [
-          camSize[0] / 2,
-          -camSize[1] / 2,
-        ];
-
-        const { scrollDelta } = this.scene.mouse;
-        if (this.scene.keyboard.isKeyDown('shift') && scrollDelta) {
-          this.currMSWidth += this.currMSWidth * (scrollDelta * .1);
+        this.frameCount++;
+        this.sumDt += dt;
+        if (this.sumDt >= .1) {
+          this.fps = this.frameCount / this.sumDt;
+          this.text = `fps: ${this.fps.toFixed(2)}`;
+          this.frameCount = 0;
+          this.sumDt = 0;
         }
-        if (this.scene.keyboard.isKeyDown('alt')) {
-          this.transform.position[1] += scrollDelta * dt * 1000;
+      },
+    }, {
+      tag: 'fps',
+      position: [
+        -camera.getSize()[0] / 2,
+        camera.getSize()[1] / 2 - 10,
+      ],
+    });
+
+    // Timeline
+    const timeline = refTimeline.current = camera.createObject(ObjectGroup, {
+      currMSWidth: .001,
+      size: [
+        camera.viewport.size[0],
+        TIMELINE_HEIGHT,
+      ],
+      update(dt) {
+        const { mouse, keyboard, camera } = this.scene;
+        const { scrollDelta } = mouse;
+        if (keyboard.isKeyDown('shift') && scrollDelta) {
+          const changeScale = scrollDelta * .1;
+          this.currMSWidth += this.currMSWidth * changeScale;
+          const mousePos = mouse.getPositionOnScene();
+          camera.transform.position[0] += mousePos[0] * changeScale;
+          log({updateTM: this.currMSWidth});
+
         }
       },
     }, {
       tag: 'timeline',
+      position: [
+        camera.viewport.size[0] / 2,
+        -camera.viewport.size[1] / 2,
+      ],
     });
 
+    // Timeline > background
     timeline.createObject(Rect, {
       // backgroundColor: '#faa',
-      backgroundColor: '#000',
+      backgroundColor: 'rgba(0, 0, 0, .15)',
       update(dt) {
         this.size = this.parent.size;
       }
@@ -141,7 +176,7 @@ const GanttChart = ({ records }) => {
     const getCurrDatePos = (msWidth, posX) => {
       const backInTimeMSs = posX / msWidth;
       const date = new Date(NOW + backInTimeMSs);
-        
+
       const ms = {
         value: date.getMilliseconds(),
         min: 0,
@@ -150,7 +185,7 @@ const GanttChart = ({ records }) => {
         begin: posX - msWidth,
         end: posX,
       };
-    
+
       const sec = {
         value: date.getSeconds(),
         min: 0,
@@ -163,7 +198,7 @@ const GanttChart = ({ records }) => {
           return posX + (this.fullWidth - this.leftHandWidth);
         },
       };
-    
+
       const min = {
         value: date.getMinutes(),
         min: 0,
@@ -176,7 +211,7 @@ const GanttChart = ({ records }) => {
           return posX + (this.fullWidth - this.leftHandWidth);
         },
       };
-    
+
       const hour = {
         value: date.getHours(),
         min: 0,
@@ -189,7 +224,7 @@ const GanttChart = ({ records }) => {
           return posX + (this.fullWidth - this.leftHandWidth);
         },
       };
-    
+
       const day = {
         value: date.getDate(),
         min: 1,
@@ -202,7 +237,7 @@ const GanttChart = ({ records }) => {
           return posX + (this.fullWidth - this.leftHandWidth);
         },
       };
-    
+
       const month = {
         value: date.getMonth(),
         min: 0,
@@ -217,7 +252,7 @@ const GanttChart = ({ records }) => {
           return posX + (this.fullWidth - this.leftHandWidth);
         },
       };
-    
+
       const year = {
         value: date.getFullYear(),
         min: 0,
@@ -240,7 +275,7 @@ const GanttChart = ({ records }) => {
           return posX + (this.fullWidth - this.leftHandWidth);
         },
       };
-    
+
       return {
         ms,
         sec,
@@ -285,6 +320,7 @@ const GanttChart = ({ records }) => {
       return { width: yearWidth, name: 'year' };
     };
 
+    // Timeline > shortlines
     timeline.createObject(ObjectGroup, {
       size: [0, 0],
       update(dt) {
@@ -297,13 +333,8 @@ const GanttChart = ({ records }) => {
         const startPosition = this.getPositionOnScene();
 
         const minimumVisibleTimeRange = getMinimumVisibleTimeRange(currMSWidth);
-        log({ minimumVisibleTimeRange: minimumVisibleTimeRange.name });
-        let i = 1000;
         let linePosX = startPosition[0];
-        log({ linePosX, currMSWidth });
-        let count = 0;
-        while (true && i--) {
-          count++;
+        while (true) {
           const {
             [minimumVisibleTimeRange.name]: currDatePos,
           } = getCurrDatePos(currMSWidth, linePosX);
@@ -334,52 +365,113 @@ const GanttChart = ({ records }) => {
             text: currDatePos.value,
             color: 'white',
             size: 10,
+            textAlign: 'center',
             position: [
-              linePosition[0] + (currDatePos.fullWidth / 2),
+              linePosition[0],
               linePosition[1] - 20,
             ],
           });
         }
-        log({ count, linePosX });
       }
     }, {
       tag: 'timeline-short-lines',
     });
 
-    const pr = scene.createObject(Rect, {
-      backgroundColor: '#faf',
-      size: [5, 5],
-      radius: 10,
+    // Tracks
+    const tracks = scene.createObject(ObjectGroup, {
+      trackHeight: 40,
+      update(dt) {
+        const { scrollDelta } = this.scene.mouse;
+        if (this.scene.keyboard.isKeyDown('alt') && scrollDelta) {
+          this.trackHeight += this.trackHeight * (scrollDelta * .1);
+        }
+      },
+      async render() {
+        const { camera } = this.scene;
+        const camSize = camera.getSize();
+        const camEdgePos = camera.getEdgePositionsOnScene();
+        const offsetY = Math.floor(Math.max(camEdgePos.b, 0) / this.trackHeight);
+        for (let i = offsetY; i < camEdgePos.t; i += this.trackHeight) {
+          camera.renderLine({
+            color: 'gray',
+            lineWidth: .1,
+            position: [
+              camEdgePos.r,
+              i,
+            ],
+            vertices: [
+              [0, 0],
+              [-camSize[0], 0],
+            ],
+          });
+        }
+      },
     }, {
-      tag: 'pr',
-      position: [-300, 30],
+      tag: 'tracks',
     });
 
-    const prShape = pr.createObject(Rect,
-      {
-        backgroundColor: '#ffa',
-        size: [200, 50],
-      },
-      {
-        tag: 'prShape',
-      }
-    );
+    // PRs
+    const pr = refPRs.current = scene.createObject(ObjectGroup, {
+      update(dt) {
+        if (!this.objects?.length)
+          this.updatePRs();
 
-    const prTitle = pr.createObject(Text,
-      {
-        text: 'this is a pr title.',
-        size: 16,
-        weight: 400,
       },
-      {
-        tag: 'prTitle',
-        position: [
-          -prShape.size[0] + 10,
-          prShape.size[1] / 2,
-          20
-        ],
+      updatePRs(records) {
+        this.createObject(Rect, {
+          update(dt) {
+            const closedAtTime = new Date(NOW).getTime();
+            const createdAtTime = new Date(NOW - (10 * 60 * 1000)).getTime();
+            const x = -(NOW - closedAtTime) * timeline.currMSWidth;
+            const w = (closedAtTime - createdAtTime) * timeline.currMSWidth;
+            log({updatePR: timeline.currMSWidth});
+            this.size = [
+              w,
+              tracks.trackHeight,
+            ];
+            this.transform.position = [
+              x,
+              0,
+            ];
+          },
+        }, {
+          tag: 'pr-child',
+        });
       },
-    );
+      async renderObjects() {
+        for (const object of this.getObjectsByDepth()) {
+          await object.renderObjects();
+        }
+      }
+    }, {
+      tag: 'PR',
+    });
+
+    // const prShape = pr.createObject(Rect,
+    //   {
+    //     backgroundColor: '#ffa',
+    //     size: [200, 50],
+    //   },
+    //   {
+    //     tag: 'prShape',
+    //   }
+    // );
+
+    // const prTitle = pr.createObject(Text,
+    //   {
+    //     text: 'this is a pr title.',
+    //     size: 16,
+    //     weight: 400,
+    //   },
+    //   {
+    //     tag: 'prTitle',
+    //     position: [
+    //       -prShape.size[0] + 10,
+    //       prShape.size[1] / 2,
+    //       20
+    //     ],
+    //   },
+    // );
 
     scene.createObject(Line, {
       vertices: [
