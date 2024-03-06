@@ -356,31 +356,40 @@ export class Camera extends EngineEntity {
     text = '',
     position = [0, 0],
     maxWidth = Infinity,
+    multiline = false,
+    lineHeight = size,
   } = {}) {
     const posOnViewport = this.convertPosScene2Viewport(position);
     this.ctx.font = `${weight} ${size}px Segoe UI`;
-
-
-    if (maxWidth <= 0)
-      return;
-
-
-    if (this.ctx.measureText(text).width > maxWidth) {
-      const dots = '...';
-      const dotsWidth = this.ctx.measureText(dots).width;
-      if (dotsWidth > maxWidth)
-        return;
-      let truncatedText = '';
-      let i = 0;
-      while (this.ctx.measureText(truncatedText).width + dotsWidth < maxWidth) {
-        truncatedText += text[i++];
-      }
-      text = truncatedText.slice(0, -1) + dots;
-    }
-
     this.ctx.fillStyle = color;
     this.ctx.textAlign = textAlign;
-    this.ctx.fillText(text, ...posOnViewport);
+
+    if (multiline) {
+      text.toString().split('\n').forEach((line, i) => {
+        this.ctx.fillText(
+          line,
+          posOnViewport[0],
+          posOnViewport[1] + (i * lineHeight),
+        );
+      });
+    } else {
+      if (maxWidth <= 0)
+        return;
+
+      if (this.ctx.measureText(text).width > maxWidth) {
+        const dots = '...';
+        const dotsWidth = this.ctx.measureText(dots).width;
+        if (dotsWidth > maxWidth)
+          return;
+        let truncatedText = '';
+        let i = 0;
+        while (this.ctx.measureText(truncatedText).width + dotsWidth < maxWidth) {
+          truncatedText += text[i++];
+        }
+        text = truncatedText.slice(0, -1) + dots;
+      }
+      this.ctx.fillText(text, ...posOnViewport);
+    }
   }
 
   renderLine({
@@ -508,6 +517,9 @@ export class Text extends EmptyObject {
       text: this.text,
       position: this.getPositionOnScene(),
       maxWidth: this.maxWidth,
+      textAlign: this.textAlign,
+      multiline: this.multiline,
+      lineHeight: this.lineHeight,
     });
   }
 }

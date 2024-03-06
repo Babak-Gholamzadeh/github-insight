@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   log,
-  // getRandomColor,
+  getHumanReadableTimeAgo,
   getReadableTimePeriodShorter,
 } from '../../utils';
 import {
@@ -399,7 +399,7 @@ const GanttChart = ({ records }) => {
         for (let i = offsetY; i < camEdgePos.t; i += this.trackHeight) {
           camera.renderLine({
             color: '#333',
-            lineWidth: 1,
+            lineWidth: this.trackHeight / 40,
             position: [
               camEdgePos.r,
               i,
@@ -441,7 +441,7 @@ const GanttChart = ({ records }) => {
         this.objects = [];
         this.trackOccupancy.empty();
 
-        records.slice(4, 5).forEach(record => {
+        records.forEach(record => {
           const closedAtTime = new Date(record.closed_at).getTime() || NOW;
           const createdAtTime = new Date(record.created_at).getTime();
           const x = -(NOW - closedAtTime);
@@ -497,6 +497,25 @@ const GanttChart = ({ records }) => {
           }, {
             tag: 'pr-tooltip',
           });
+          pr.toolTip.createObject(Text, {
+            text: [
+              `${record.state === 'open' ? 'has' : 'had'} been open for ${getReadableTimePeriodShorter(record.longRunning)}`,
+              `Created ${getHumanReadableTimeAgo(record.created_at)}`,
+            ].join('\n'),
+            size: 12,
+            color: '#000',
+            lineHeight: 20,
+            multiline: true,
+            margin: 10,
+            update(dt) {
+              this.transform.position = [
+                -this.parent.size[0] + this.margin,
+                this.parent.size[1] - this.lineHeight - this.margin,
+              ];
+            }
+          }, {
+            tag: 'pr-tooltip-text',
+          });
           pr.userAvatar = pr.createObject(RectImage, {
             url: record.user.avatar_url,
             backgroundColor: 'rgba(255, 255, 255, .5)',
@@ -520,7 +539,7 @@ const GanttChart = ({ records }) => {
             position: [-3, 0],
           });
           pr.title = pr.createObject(Text, {
-            text: record.title, //getReadableTimePeriodShorter(record.longRunning),
+            text: record.title,
             color: '#fff',
             size: 14,
             margin: 5,
@@ -531,9 +550,17 @@ const GanttChart = ({ records }) => {
               ];
               this.maxWidth =
                 this.parent.size[0] -
-                (this.parent.userAvatar.visible ? this.parent.userAvatar.size[0] + (this.parent.userAvatar.margin * 2) : 0) -
+                (
+                  this.parent.userAvatar.visible
+                    ? this.parent.userAvatar.size[0] + (this.parent.userAvatar.margin * 2)
+                    : 0
+                ) -
                 (this.margin * 2);
-              // log({ tag: this.tag, maxWidth: this.maxWidth, prWidth: this.parent.size[0] });
+
+              if (this.parent.size[1] < 15)
+                this.visible = false;
+              else if (!this.visible)
+                this.visible = true;
             }
           }, {
             tag: 'pr-title',
@@ -547,17 +574,6 @@ const GanttChart = ({ records }) => {
       }
     }, {
       tag: 'PR',
-    });
-
-    scene.createObject(Line, {
-      vertices: [
-        [0, 0],
-        [200, 100],
-      ],
-      color: 'red',
-      lineWidth: 2,
-    }, {
-      position: [-400, 300],
     });
 
   }, [ctx, viewport]);
