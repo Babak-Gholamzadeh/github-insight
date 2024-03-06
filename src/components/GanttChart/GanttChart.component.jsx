@@ -6,13 +6,11 @@ import {
 } from '../../utils';
 import {
   Engine,
-  Keyboard,
-  Mouse,
   Scene,
-  ObjectGroup,
-  Camera,
+  EmptyObject,
   Line,
   Rect,
+  RectImage,
   Text,
 } from './engine';
 
@@ -142,7 +140,7 @@ const GanttChart = ({ records }) => {
     });
 
     // Timeline
-    const timeline = refTimeline.current = camera.createObject(ObjectGroup, {
+    const timeline = refTimeline.current = camera.createObject(EmptyObject, {
       currMSWidth: .0000005,
       size: [
         camera.viewport.size[0],
@@ -326,7 +324,7 @@ const GanttChart = ({ records }) => {
     };
 
     // Timeline > shortlines
-    timeline.createObject(ObjectGroup, {
+    timeline.createObject(EmptyObject, {
       size: [0, 0],
       update(dt) {
         this.size = this.parent.size;
@@ -383,7 +381,7 @@ const GanttChart = ({ records }) => {
     });
 
     // Tracks
-    const tracks = scene.createObject(ObjectGroup, {
+    const tracks = scene.createObject(EmptyObject, {
       trackHeight: 40,
       trackPadding: 2,
       update(dt) {
@@ -419,7 +417,7 @@ const GanttChart = ({ records }) => {
     });
 
     // PRs
-    refPRs.current = scene.createObject(ObjectGroup, {
+    refPRs.current = scene.createObject(EmptyObject, {
       trackOccupancy: {
         tracks: [],
         empty() {
@@ -443,7 +441,7 @@ const GanttChart = ({ records }) => {
         this.objects = [];
         this.trackOccupancy.empty();
 
-        records.forEach(record => {
+        records.slice(0, 10).forEach(record => {
           const closedAtTime = new Date(record.closed_at).getTime() || NOW;
           const createdAtTime = new Date(record.created_at).getTime();
           const x = -(NOW - closedAtTime);
@@ -493,12 +491,35 @@ const GanttChart = ({ records }) => {
               const x = mousePos[0] - parentPos[0] + this.size[0];
               this.transform.position = [
                 x,
-                0, //tracks.trackHeight,
+                tracks.trackHeight,
               ];
             }
           }, {
             tag: 'pr-tooltip',
           });
+          pr.userAvatar = pr.createObject(RectImage, {
+            url: record.user.avatar_url,
+            size: [30, 30],
+            radius: 30,
+            backgroundColor: 'rgba(255, 255, 255, .5)',
+            margin: 3,
+            update(dt) {
+              const squereSize = this.parent.size[1] - (this.margin * 2);
+              this.size = [
+                squereSize,
+                squereSize,
+              ];
+              this.radius = squereSize;
+              this.transform.position[1] = this.parent.size[1] / 2 - this.size[1] / 2;
+              if (this.parent.size[0] < squereSize + (this.margin * 2)) {
+                this.visible = false;
+              } else if (!this.visible) {
+                this.visible = true;
+              }
+            }
+          }, {
+            position: [-3, 0],
+          })
         });
       },
       async renderObjects() {

@@ -323,6 +323,31 @@ export class Camera extends EngineEntity {
     this.ctx.fill();
   }
 
+  renderRoundImg({
+    img,
+    position = [0, 0],
+    size = [0, 0],
+    radius = 0,
+  } = {}) {
+    const posOnViewport = this.convertPosScene2Viewport(position);
+    const sizeOnViewport = size.map(v => -v);
+    this.ctx.save();
+    this.ctx.beginPath();
+    this.ctx.roundRect(
+      ...posOnViewport,
+      ...sizeOnViewport,
+      radius,
+    );
+    this.ctx.closePath();
+    this.ctx.clip();
+    this.ctx.drawImage(
+      img,
+      ...posOnViewport,
+      ...sizeOnViewport,
+    );
+    this.ctx.restore();
+  }
+
   renderText({
     weight = 100,
     size = 14,
@@ -362,13 +387,13 @@ export class Camera extends EngineEntity {
   }
 }
 
-export class ObjectGroup extends EngineEntity {
+export class EmptyObject extends EngineEntity {
   size = [0, 0];
   isMouseHover = false;
 
-  constructor(objectGroupOptions, options) {
+  constructor(EmptyObjectOptions, options) {
     super(options);
-    Object.assign(this, objectGroupOptions);
+    Object.assign(this, EmptyObjectOptions);
   }
 
   getSize() {
@@ -400,7 +425,7 @@ export class ObjectGroup extends EngineEntity {
   }
 }
 
-export class Line extends ObjectGroup {
+export class Line extends EmptyObject {
   async render() {
     const position = this.getPositionOnScene();
     this.scene.camera.renderLine({
@@ -412,7 +437,7 @@ export class Line extends ObjectGroup {
   }
 }
 
-export class Rect extends ObjectGroup {
+export class Rect extends EmptyObject {
   constructor(...options) {
     super(...options);
     this.size = this.size || [0, 0];
@@ -431,7 +456,33 @@ export class Rect extends ObjectGroup {
   }
 }
 
-export class Text extends ObjectGroup {
+export class RectImage extends Rect {
+  constructor(...options) {
+    super(...options);
+    this.loadedImage = null;
+    this.img = new Image();
+    this.img.src = this.url;
+    this.img.onload = () => {
+      log({ imgLoaded: this.img.src });
+      this.loadedImage = this.img;
+    };
+  }
+  async render() {
+    if (!this.loadedImage)
+      return super.render();
+
+    const position = this.getPositionOnScene();
+    const size = this.getSize();
+    this.scene.camera.renderRoundImg({
+      img: this.loadedImage,
+      position,
+      size,
+      radius: this.radius,
+    });
+  }
+}
+
+export class Text extends EmptyObject {
   async render() {
     this.scene.camera.renderText({
       weight: this.weight,
