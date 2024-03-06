@@ -384,14 +384,19 @@ const GanttChart = ({ records }) => {
     const tracks = scene.createObject(EmptyObject, {
       trackHeight: 40,
       trackPadding: 2,
+      trackLineHeight: 1,
       update(dt) {
         const { scrollDelta } = this.scene.mouse;
         if (this.scene.keyboard.isKeyDown('alt') && scrollDelta) {
           this.trackHeight += this.trackHeight * (scrollDelta * .1);
+          this.trackLineHeight = this.trackHeight / 40;
           // this.trackPadding = 2 * this.trackHeight / 40;
+
         }
       },
       async render() {
+        if (this.trackLineHeight < .1)
+          return;
         const { camera } = this.scene;
         const camSize = camera.getSize();
         const camEdgePos = camera.getEdgePositionsOnScene();
@@ -399,7 +404,7 @@ const GanttChart = ({ records }) => {
         for (let i = offsetY; i < camEdgePos.t; i += this.trackHeight) {
           camera.renderLine({
             color: '#333',
-            lineWidth: this.trackHeight / 40,
+            lineWidth: this.trackLineHeight,
             position: [
               camEdgePos.r,
               i,
