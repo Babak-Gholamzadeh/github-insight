@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   log,
   // getRandomColor,
-  // getReadableTimePeriodShorter,
+  getReadableTimePeriodShorter,
 } from '../../utils';
 import {
   Engine,
@@ -388,7 +388,7 @@ const GanttChart = ({ records }) => {
         const { scrollDelta } = this.scene.mouse;
         if (this.scene.keyboard.isKeyDown('alt') && scrollDelta) {
           this.trackHeight += this.trackHeight * (scrollDelta * .1);
-          this.trackPadding = 2 * this.trackHeight / 40;
+          // this.trackPadding = 2 * this.trackHeight / 40;
         }
       },
       async render() {
@@ -441,7 +441,7 @@ const GanttChart = ({ records }) => {
         this.objects = [];
         this.trackOccupancy.empty();
 
-        records.slice(0, 10).forEach(record => {
+        records.slice(4, 5).forEach(record => {
           const closedAtTime = new Date(record.closed_at).getTime() || NOW;
           const createdAtTime = new Date(record.created_at).getTime();
           const x = -(NOW - closedAtTime);
@@ -499,8 +499,6 @@ const GanttChart = ({ records }) => {
           });
           pr.userAvatar = pr.createObject(RectImage, {
             url: record.user.avatar_url,
-            size: [30, 30],
-            radius: 30,
             backgroundColor: 'rgba(255, 255, 255, .5)',
             margin: 3,
             update(dt) {
@@ -511,15 +509,35 @@ const GanttChart = ({ records }) => {
               ];
               this.radius = squereSize;
               this.transform.position[1] = this.parent.size[1] / 2 - this.size[1] / 2;
-              if (this.parent.size[0] < squereSize + (this.margin * 2)) {
+              if (squereSize < 5 || this.parent.size[0] < squereSize + (this.margin * 2)) {
                 this.visible = false;
               } else if (!this.visible) {
                 this.visible = true;
               }
             }
           }, {
+            tag: 'pr-avatar',
             position: [-3, 0],
-          })
+          });
+          pr.title = pr.createObject(Text, {
+            text: record.title, //getReadableTimePeriodShorter(record.longRunning),
+            color: '#fff',
+            size: 14,
+            margin: 5,
+            update(dt) {
+              this.transform.position = [
+                -this.parent.size[0] + this.margin,
+                this.parent.size[1] / 2 - this.size / 2,
+              ];
+              this.maxWidth =
+                this.parent.size[0] -
+                (this.parent.userAvatar.visible ? this.parent.userAvatar.size[0] + (this.parent.userAvatar.margin * 2) : 0) -
+                (this.margin * 2);
+              // log({ tag: this.tag, maxWidth: this.maxWidth, prWidth: this.parent.size[0] });
+            }
+          }, {
+            tag: 'pr-title',
+          });
         });
       },
       async renderObjects() {

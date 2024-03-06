@@ -355,9 +355,29 @@ export class Camera extends EngineEntity {
     textAlign = 'left',
     text = '',
     position = [0, 0],
+    maxWidth = Infinity,
   } = {}) {
     const posOnViewport = this.convertPosScene2Viewport(position);
     this.ctx.font = `${weight} ${size}px Segoe UI`;
+
+
+    if (maxWidth <= 0)
+      return;
+
+
+    if (this.ctx.measureText(text).width > maxWidth) {
+      const dots = '...';
+      const dotsWidth = this.ctx.measureText(dots).width;
+      if (dotsWidth > maxWidth)
+        return;
+      let truncatedText = '';
+      let i = 0;
+      while (this.ctx.measureText(truncatedText).width + dotsWidth < maxWidth) {
+        truncatedText += text[i++];
+      }
+      text = truncatedText.slice(0, -1) + dots;
+    }
+
     this.ctx.fillStyle = color;
     this.ctx.textAlign = textAlign;
     this.ctx.fillText(text, ...posOnViewport);
@@ -462,10 +482,7 @@ export class RectImage extends Rect {
     this.loadedImage = null;
     this.img = new Image();
     this.img.src = this.url;
-    this.img.onload = () => {
-      log({ imgLoaded: this.img.src });
-      this.loadedImage = this.img;
-    };
+    this.img.onload = () => this.loadedImage = this.img;
   }
   async render() {
     if (!this.loadedImage)
@@ -490,6 +507,7 @@ export class Text extends EmptyObject {
       color: this.color,
       text: this.text,
       position: this.getPositionOnScene(),
+      maxWidth: this.maxWidth,
     });
   }
 }
