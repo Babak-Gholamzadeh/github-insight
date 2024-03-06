@@ -18,6 +18,13 @@ import {
 
 import './GanttChart.style.scss';
 
+const PR_STATE_COLORS = {
+  open: [63, 186, 80, 1],
+  draft: [133, 141, 151, 1],
+  merged: [163, 113, 247, 1],
+  closed: [248, 81, 73, 1],
+};
+
 const GanttChart = ({ records }) => {
   log({ ComponentRerendered: 'GanttChart' });
   const refWrapper = useRef();
@@ -74,7 +81,7 @@ const GanttChart = ({ records }) => {
       ctx, viewport,
       dragPos: null,
       update(dt) {
-        log({updateCM: dt});
+        // log({ updateCM: dt });
         const mouse = this.scene.mouse;
         if (!this.dragPos && mouse.isBtnDown('left')) {
           const mousePos = mouse.getPositionOnViewport();
@@ -96,14 +103,13 @@ const GanttChart = ({ records }) => {
           );
           this.dragPos = currMousePos;
         }
-
       },
     }, {
       position: [
         -viewport.size[0] / 2,
         viewport.size[1] / 2 - TIMELINE_HEIGHT,
-        Infinity,
       ],
+      layerOrder: Infinity,
     });
 
     refEngine.current.run();
@@ -137,7 +143,7 @@ const GanttChart = ({ records }) => {
 
     // Timeline
     const timeline = refTimeline.current = camera.createObject(ObjectGroup, {
-      currMSWidth: .001,
+      currMSWidth: .0000005,
       size: [
         camera.viewport.size[0],
         TIMELINE_HEIGHT,
@@ -150,8 +156,7 @@ const GanttChart = ({ records }) => {
           this.currMSWidth += this.currMSWidth * changeScale;
           const mousePos = mouse.getPositionOnScene();
           camera.transform.position[0] += mousePos[0] * changeScale;
-          log({updateTM: this.currMSWidth});
-
+          // log({ updateTM: this.currMSWidth });
         }
       },
     }, {
@@ -165,7 +170,7 @@ const GanttChart = ({ records }) => {
     // Timeline > background
     timeline.createObject(Rect, {
       // backgroundColor: '#faa',
-      backgroundColor: 'rgba(0, 0, 0, .15)',
+      backgroundColor: 'rgba(0, 0, 0, 1)',
       update(dt) {
         this.size = this.parent.size;
       }
@@ -380,10 +385,12 @@ const GanttChart = ({ records }) => {
     // Tracks
     const tracks = scene.createObject(ObjectGroup, {
       trackHeight: 40,
+      trackPadding: 2,
       update(dt) {
         const { scrollDelta } = this.scene.mouse;
         if (this.scene.keyboard.isKeyDown('alt') && scrollDelta) {
           this.trackHeight += this.trackHeight * (scrollDelta * .1);
+          this.trackPadding = 2 * this.trackHeight / 40;
         }
       },
       async render() {
@@ -393,8 +400,8 @@ const GanttChart = ({ records }) => {
         const offsetY = Math.floor(Math.max(camEdgePos.b, 0) / this.trackHeight);
         for (let i = offsetY; i < camEdgePos.t; i += this.trackHeight) {
           camera.renderLine({
-            color: 'gray',
-            lineWidth: .1,
+            color: '#333',
+            lineWidth: 1,
             position: [
               camEdgePos.r,
               i,
@@ -408,34 +415,90 @@ const GanttChart = ({ records }) => {
       },
     }, {
       tag: 'tracks',
+      layerOrder: -Infinity,
     });
 
     // PRs
-    const pr = refPRs.current = scene.createObject(ObjectGroup, {
+    refPRs.current = scene.createObject(ObjectGroup, {
+      trackOccupancy: {
+        tracks: [],
+        empty() {
+          this.tracks = [];
+        },
+        registerInTrack(x, w) {
+          const tIdx = this.tracks.findIndex(v => x < v);
+          if (tIdx === -1) {
+            this.tracks.push(x - w);
+            return this.tracks.length - 1;
+          }
+          this.tracks[tIdx] = x - w;
+          return tIdx;
+        },
+      },
       update(dt) {
-        if (!this.objects?.length)
-          this.updatePRs();
-
       },
       updatePRs(records) {
-        this.createObject(Rect, {
-          update(dt) {
-            const closedAtTime = new Date(NOW).getTime();
-            const createdAtTime = new Date(NOW - (10 * 60 * 1000)).getTime();
-            const x = -(NOW - closedAtTime) * timeline.currMSWidth;
-            const w = (closedAtTime - createdAtTime) * timeline.currMSWidth;
-            log({updatePR: timeline.currMSWidth});
-            this.size = [
-              w,
-              tracks.trackHeight,
-            ];
-            this.transform.position = [
-              x,
-              0,
-            ];
-          },
-        }, {
-          tag: 'pr-child',
+        log({ recordsLen: records.length });
+
+        this.objects = [];
+        this.trackOccupancy.empty();
+
+        records.forEach(record => {
+          const closedAtTime = new Date(record.closed_at).getTime() || NOW;
+          const createdAtTime = new Date(record.created_at).getTime();
+          const x = -(NOW - closedAtTime);
+          const w = (closedAtTime - createdAtTime);
+
+          const trackIdx = this.trackOccupancy.registerInTrack(x, w);
+          // log({ trackIdx });
+
+          const pr = this.createObject(Rect, {
+            backgroundColor: `rgba(${PR_STATE_COLORS[record.state]})`,
+            radius: 5,
+            update(dt) {
+              this.size = [
+                w * timeline.currMSWidth,
+                tracks.trackHeight - (tracks.trackPadding * 2),
+              ];
+              this.transform.position = [
+                x * timeline.currMSWidth,
+                trackIdx * tracks.trackHeight + tracks.trackPadding,
+              ];
+
+              if (this.onMouseHover()) {
+                const BGcolor = [...PR_STATE_COLORS[record.state]];
+                BGcolor[3] = 1;
+                this.backgroundColor = `rgba(${BGcolor})`;
+                this.toolTip.show();
+              } else if (this.onMouseOut()) {
+                this.backgroundColor = `rgba(${PR_STATE_COLORS[record.state]})`;
+                this.toolTip.hide();
+              }
+            },
+          }, {
+            tag: 'pr-child',
+            layerOrder: 100000 - trackIdx,
+          });
+          pr.toolTip = pr.createObject(Rect, {
+            size: [200, 100],
+            backgroundColor: 'rgba(255, 255, 255, 1)',
+            radius: 20,
+            visible: false,
+            enable: false,
+            show() { this.visible = this.enable = true; },
+            hide() { this.visible = this.enable = false; },
+            update(dt) {
+              const mousePos = this.scene.mouse.getPositionOnScene();
+              const parentPos = this.parent.getPositionOnScene();
+              const x = mousePos[0] - parentPos[0] + this.size[0];
+              this.transform.position = [
+                x,
+                0, //tracks.trackHeight,
+              ];
+            }
+          }, {
+            tag: 'pr-tooltip',
+          });
         });
       },
       async renderObjects() {
@@ -446,32 +509,6 @@ const GanttChart = ({ records }) => {
     }, {
       tag: 'PR',
     });
-
-    // const prShape = pr.createObject(Rect,
-    //   {
-    //     backgroundColor: '#ffa',
-    //     size: [200, 50],
-    //   },
-    //   {
-    //     tag: 'prShape',
-    //   }
-    // );
-
-    // const prTitle = pr.createObject(Text,
-    //   {
-    //     text: 'this is a pr title.',
-    //     size: 16,
-    //     weight: 400,
-    //   },
-    //   {
-    //     tag: 'prTitle',
-    //     position: [
-    //       -prShape.size[0] + 10,
-    //       prShape.size[1] / 2,
-    //       20
-    //     ],
-    //   },
-    // );
 
     scene.createObject(Line, {
       vertices: [
@@ -489,7 +526,7 @@ const GanttChart = ({ records }) => {
 
   useEffect(() => {
     log({ uf: `[records]: ${records.length}` });
-
+    refPRs.current?.updatePRs(records);
   }, [records]);
 
   return (

@@ -52,7 +52,7 @@ export class Engine {
       this.scene.mouse?.reset();
 
       // await new Promise(res => setTimeout(res, 2000));
-      log({ frameCount });
+      // log({ frameCount });
       requestAnimationFrame(engineLoop.bind(this));
     }).call(this);
   }
@@ -129,15 +129,21 @@ export class Mouse {
 }
 
 class EngineEntity {
-  constructor({ tag, position } = {}) {
+  objects = [];
+  layerOrder = 0;
+  transform = {
+    position: [0, 0, 0], // x, y, z (depth)
+    scale: [1, 1, 1],
+    rotation: [0, 0, 0],
+  };
+  visible = true;
+  enable = true;
+
+  constructor({ tag, position, layerOrder } = {}) {
     this.tag = tag || this.constructor.name;
     console.log('Engine > Constructor:', this.tag);
-    this.transform = {
-      position: position || [0, 0, 0], // x, y, z (depth)
-      scale: [1, 1, 1],
-      rotation: [0, 0, 0],
-    };
-    this.objects = [];
+    position && (this.transform.position = position);
+    layerOrder && (this.layerOrder = layerOrder);
   }
 
   getPositionOnScene() {
@@ -160,15 +166,11 @@ class EngineEntity {
   }
 
   getObjectsByDepth(direction = 1) {
-    return this.objects = this.objects
-      .map(o => {
-        o.transform.position[2] = o.transform.position[2] ?? 0;
-        return o;
-      })
+    return this.objects
       .sort((a, b) => {
         if (direction)
-          return a.transform.position[2] ?? 0 - b.transform.position[2] ?? 0;
-        return b.transform.position[2] ?? 0 - a.transform.position[2] ?? 0;
+          return a.layerOrder - b.layerOrder;
+        return b.layerOrder - a.layerOrder;
       });
   }
 
@@ -179,11 +181,16 @@ class EngineEntity {
   }
 
   updateObjects(dt) {
+    this.internalUpdate(dt);
     this.update(dt);
     for (const object of this.getObjectsByDepth(0)) {
-      object.updateObjects(dt);
+      if (object.enable)
+        object.updateObjects(dt);
     }
   }
+
+  // override
+  internalUpdate(dt) { }
 
   // override
   update(dt) { }
@@ -191,7 +198,8 @@ class EngineEntity {
   async renderObjects() {
     await this.render();
     for (const object of this.getObjectsByDepth()) {
-      await object.renderObjects();
+      if (object.visible)
+        await object.renderObjects();
     }
   }
 
@@ -355,9 +363,40 @@ export class Camera extends EngineEntity {
 }
 
 export class ObjectGroup extends EngineEntity {
+  size = [0, 0];
+  isMouseHover = false;
+
   constructor(objectGroupOptions, options) {
     super(options);
     Object.assign(this, objectGroupOptions);
+  }
+
+  getSize() {
+    const scale = this.getScale();
+    return [
+      this.size[0] * scale[0],
+      this.size[1] * scale[1],
+    ];
+  }
+
+  internalUpdate(dt) {
+    const mousePos = this.scene.mouse.getPositionOnScene();
+    const position = this.getPositionOnScene();
+    const size = this.getSize();
+    this.isMouseHover = (
+      mousePos[0] <= position[0] &&
+      mousePos[0] >= position[0] - size[0] &&
+      mousePos[1] >= position[1] &&
+      mousePos[1] <= position[1] + size[1]
+    );
+  }
+
+  onMouseHover() {
+    return this.isMouseHover;
+  }
+
+  onMouseOut() {
+    return !this.isMouseHover;
   }
 }
 
@@ -377,14 +416,6 @@ export class Rect extends ObjectGroup {
   constructor(...options) {
     super(...options);
     this.size = this.size || [0, 0];
-  }
-
-  getSize() {
-    const scale = this.getScale();
-    return [
-      this.size[0] * scale[0],
-      this.size[1] * scale[1],
-    ];
   }
 
   async render() {
