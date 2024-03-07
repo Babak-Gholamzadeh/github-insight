@@ -9,6 +9,7 @@ import {
   Scene,
   EmptyObject,
   Line,
+  Ploygon,
   Rect,
   RectImage,
   Text,
@@ -72,7 +73,7 @@ const GanttChart = ({ records }) => {
     log({ uf: `[ctx, viewport]: ${ctx}, ${viewport}` });
     if (!ctx) return;
     const scene = refScene.current;
-    const TIMELINE_HEIGHT = viewport.size[1] * .1;
+    const TIMELINE_HEIGHT = 60;
 
     // Camera
     const camera = refCamera.current = scene.createCamera({
@@ -107,7 +108,7 @@ const GanttChart = ({ records }) => {
         -viewport.size[0] / 2,
         viewport.size[1] / 2 - TIMELINE_HEIGHT,
       ],
-      layerOrder: Infinity,
+      layerOrder: 10,
     });
 
     refEngine.current.run();
@@ -168,7 +169,7 @@ const GanttChart = ({ records }) => {
     // Timeline > background
     timeline.createObject(Rect, {
       // backgroundColor: '#faa',
-      backgroundColor: 'rgba(0, 0, 0, 1)',
+      backgroundColor: 'rgba(0, 0, 0, .5)',
       update(dt) {
         this.size = this.parent.size;
       }
@@ -380,6 +381,75 @@ const GanttChart = ({ records }) => {
       tag: 'timeline-short-lines',
     });
 
+    // Timeline > cursor
+    const timelineCursor = scene.createObject(EmptyObject, {
+      update(dt) {
+        const camPos = this.scene.camera.getPositionOnScene();
+        const mousePos = this.scene.mouse.getPositionOnScene();
+        this.transform.position = [
+          mousePos[0],
+          camPos[1],
+        ];
+      }
+    }, {
+      tag: 'timeline-cursor',
+      layerOrder: 20,
+    });
+
+    timelineCursor.createObject(Line, {
+      color: '#1d6bd5',
+      lineWidth: .7,
+      shadow: {
+        // color: 'black',
+        blur: 10,
+      },
+      update(dt) {
+        const camSize = this.scene.camera.getSize();
+        this.vertices = [
+          [0, camSize[1] / 2],
+          [0, -camSize[1] / 2 + TIMELINE_HEIGHT],
+        ];
+      },
+    }, {
+      tag: 'timeline-cursor-line',
+    });
+
+    const timelineCursorPoly = timelineCursor.createObject(Ploygon, {
+      backgroundColor: '#1d6bd5',
+      vertices: [
+        [0, 0],
+        [20, -10],
+        [20, -20],
+        [-20, -20],
+        [-20, -10],
+      ],
+      size: [40, 20],
+      update(dt) {
+        const camSize = this.scene.camera.getSize();
+        this.transform.position[1] = -camSize[1] / 2 + TIMELINE_HEIGHT;
+      },
+    }, {
+      tag: 'timeline-cursor-line',
+    });
+
+    timelineCursorPoly.createObject(Text, {
+      color: 'white',
+      size: 10,
+      // text: '12:34:56\n2024-03-07',
+      text: '12:34:56',
+      textAlign: 'center',
+      multiline: true,
+      update(dt) {
+        this.transform.position = [
+          0,
+          -this.parent.size[1] / 2 - 7,
+        ];
+      },
+    }, {
+      tag: 'timeline-cursor-line',
+    });
+
+
     // Tracks
     const tracks = scene.createObject(EmptyObject, {
       trackHeight: 40,
@@ -480,7 +550,7 @@ const GanttChart = ({ records }) => {
             },
           }, {
             tag: 'pr-child',
-            layerOrder: 100000 - trackIdx,
+            layerOrder: records.length - trackIdx,
           });
           pr.toolTip = pr.createObject(Rect, {
             size: [200, 100],
@@ -572,11 +642,6 @@ const GanttChart = ({ records }) => {
           });
         });
       },
-      async renderObjects() {
-        for (const object of this.getObjectsByDepth()) {
-          await object.renderObjects();
-        }
-      }
     }, {
       tag: 'PR',
     });

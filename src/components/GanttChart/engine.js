@@ -397,13 +397,14 @@ export class Camera extends EngineEntity {
     lineWidth = 1,
     position = [0, 0],
     vertices = [[0, 0]],
+    shadow = null,
+
   } = {}) {
     const verticesOnViewport = vertices
       .map(vectex => this.convertPosScene2Viewport([
         position[0] + vectex[0],
         position[1] + vectex[1],
       ]));
-    // log({ verticesOnViewport });
     this.ctx.save();
     this.ctx.beginPath();
     this.ctx.moveTo(...verticesOnViewport[0]);
@@ -411,7 +412,41 @@ export class Camera extends EngineEntity {
       this.ctx.lineTo(...verticesOnViewport[i]);
     this.ctx.strokeStyle = color;
     this.ctx.lineWidth = lineWidth;
+    if (shadow) {
+      this.ctx.shadowColor = shadow.color || color;
+      this.ctx.shadowBlur = shadow.blur ?? 10;
+    }
     this.ctx.stroke();
+    if (shadow) {
+      this.ctx.shadowColor = 'transparent';
+      this.ctx.shadowBlur = 0;
+    }
+    this.ctx.restore();
+  }
+
+  renderPloygon({
+    backgroundColor = '#fff',
+    borderColor = backgroundColor,
+    lineWidth = 1,
+    position = [0, 0],
+    vertices = [[0, 0]],
+  } = {}) {
+    const verticesOnViewport = vertices
+      .map(vectex => this.convertPosScene2Viewport([
+        position[0] + vectex[0],
+        position[1] + vectex[1],
+      ]));
+    this.ctx.save();
+    this.ctx.beginPath();
+    this.ctx.moveTo(...verticesOnViewport[0]);
+    for (let i = 1; i < verticesOnViewport.length; i++)
+      this.ctx.lineTo(...verticesOnViewport[i]);
+    this.ctx.fillStyle = backgroundColor;
+    this.ctx.strokeStyle = borderColor;
+    this.ctx.lineWidth = lineWidth;
+    this.ctx.closePath();
+    this.ctx.stroke();
+    this.ctx.fill();
     this.ctx.restore();
   }
 }
@@ -459,6 +494,20 @@ export class Line extends EmptyObject {
     const position = this.getPositionOnScene();
     this.scene.camera.renderLine({
       color: this.color,
+      lineWidth: this.lineWidth,
+      position,
+      vertices: this.vertices,
+      shadow: this.shadow,
+    });
+  }
+}
+
+export class Ploygon extends EmptyObject {
+  async render() {
+    const position = this.getPositionOnScene();
+    this.scene.camera.renderPloygon({
+      backgroundColor: this.backgroundColor,
+      borderColor: this.borderColor,
       lineWidth: this.lineWidth,
       position,
       vertices: this.vertices,
