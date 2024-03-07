@@ -108,7 +108,8 @@ const GanttChart = ({ records }) => {
         -viewport.size[0] / 2,
         viewport.size[1] / 2 - TIMELINE_HEIGHT,
       ],
-      layerOrder: 10,
+      updateOrder: -10,
+      renderOrder: 10,
     });
 
     refEngine.current.run();
@@ -169,7 +170,7 @@ const GanttChart = ({ records }) => {
     // Timeline > background
     timeline.createObject(Rect, {
       // backgroundColor: '#faa',
-      backgroundColor: 'rgba(0, 0, 0, .5)',
+      backgroundColor: 'rgba(0, 0, 0, 1)',
       update(dt) {
         this.size = this.parent.size;
       }
@@ -393,7 +394,8 @@ const GanttChart = ({ records }) => {
       }
     }, {
       tag: 'timeline-cursor',
-      layerOrder: 20,
+      updateOrder: 20,
+      renderOrder: 20,
     });
 
     timelineCursor.createObject(Line, {
@@ -416,6 +418,7 @@ const GanttChart = ({ records }) => {
 
     const timelineCursorPoly = timelineCursor.createObject(Ploygon, {
       backgroundColor: '#1d6bd5',
+      // backgroundColor: 'red',
       vertices: [
         [0, 0],
         [20, -10],
@@ -429,7 +432,7 @@ const GanttChart = ({ records }) => {
         this.transform.position[1] = -camSize[1] / 2 + TIMELINE_HEIGHT;
       },
     }, {
-      tag: 'timeline-cursor-line',
+      tag: 'timeline-cursor-poly',
     });
 
     timelineCursorPoly.createObject(Text, {
@@ -488,7 +491,7 @@ const GanttChart = ({ records }) => {
       },
     }, {
       tag: 'tracks',
-      layerOrder: -Infinity,
+      renderOrder: -Infinity,
     });
 
     // PRs
@@ -550,7 +553,7 @@ const GanttChart = ({ records }) => {
             },
           }, {
             tag: 'pr-child',
-            layerOrder: records.length - trackIdx,
+            renderOrder: records.length - trackIdx,
           });
           pr.toolTip = pr.createObject(Rect, {
             size: [200, 100],

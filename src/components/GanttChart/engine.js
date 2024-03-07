@@ -45,14 +45,14 @@ export class Engine {
       this.scene.camera.clearViewport();
 
       this.scene.updateObjects(dt);
-
+  
       await this.scene.renderObjects();
 
       // this.scene.keyboard?.reset();
       this.scene.mouse?.reset();
 
-      // await new Promise(res => setTimeout(res, 2000));
       // log({ frameCount });
+      // await new Promise(res => setTimeout(res, 10000));
       requestAnimationFrame(engineLoop.bind(this));
     }).call(this);
   }
@@ -130,7 +130,8 @@ export class Mouse {
 
 class EngineEntity {
   objects = [];
-  layerOrder = 0;
+  renderOrder = 0;
+  updateOrder = 0;
   transform = {
     position: [0, 0, 0], // x, y, z (depth)
     scale: [1, 1, 1],
@@ -139,11 +140,11 @@ class EngineEntity {
   visible = true;
   enable = true;
 
-  constructor({ tag, position, layerOrder } = {}) {
+  constructor({ tag, position, ...restOptions } = {}) {
     this.tag = tag || this.constructor.name;
     console.log('Engine > Constructor:', this.tag);
     position && (this.transform.position = position);
-    layerOrder && (this.layerOrder = layerOrder);
+    Object.assign(this, restOptions);
   }
 
   getPositionOnScene() {
@@ -165,12 +166,10 @@ class EngineEntity {
     this.objects.push(object);
   }
 
-  getObjectsByDepth(direction = 1) {
+  getObjectsByOrder(order) {
     return this.objects
       .sort((a, b) => {
-        if (direction)
-          return a.layerOrder - b.layerOrder;
-        return b.layerOrder - a.layerOrder;
+        return (a[order] ?? 0) - (b[order] ?? 0);
       });
   }
 
@@ -183,7 +182,7 @@ class EngineEntity {
   updateObjects(dt) {
     this.internalUpdate(dt);
     this.update(dt);
-    for (const object of this.getObjectsByDepth(0)) {
+    for (const object of this.getObjectsByOrder('updateOrder')) {
       if (object.enable)
         object.updateObjects(dt);
     }
@@ -197,7 +196,7 @@ class EngineEntity {
 
   async renderObjects() {
     await this.render();
-    for (const object of this.getObjectsByDepth()) {
+    for (const object of this.getObjectsByOrder('renderOrder')) {
       if (object.visible)
         await object.renderObjects();
     }
