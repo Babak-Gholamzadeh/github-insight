@@ -302,7 +302,9 @@ const GanttChart = ({ records }) => {
       const day = {
         value: date.getDate(),
         min: 1,
-        max: 30,
+        get max() {
+          return getNumOfDaysPerMonth(year.value, month.value);
+        },
         get leftHandWidth() {
           return getNumOfHoursPastInDay(year.value, month.value, this.value, hour.value) * hour.fullWidth + hour.leftHandWidth;
         },
@@ -441,11 +443,12 @@ const GanttChart = ({ records }) => {
         const minimumVisibleTimeRange = getMinimumVisibleTimeRange(currMSWidth);
         let linePosX = startPosition[0];
         let i = 0;
+        // let isBeginning = false;
+        // let isEnding = false;
+        let currDatePos;
         while (true && i < 1000) {
           i++;
-          const {
-            [minimumVisibleTimeRange.name]: currDatePos,
-          } = getCurrDatePos(currMSWidth, linePosX);
+          ({ [minimumVisibleTimeRange.name]: currDatePos } = getCurrDatePos(currMSWidth, linePosX));
 
           linePosX = currDatePos.begin;
           if (linePosX < camEdgePos.l - currDatePos.fullWidth)
@@ -456,6 +459,8 @@ const GanttChart = ({ records }) => {
             startPosition[1] + this.size[1],
           ];
 
+          // if(currDatePos.value === currDatePos.max)
+          //   itsEnding = true;
           const itsBeginning = currDatePos.value === currDatePos.min;
 
           const color = itsBeginning
@@ -475,26 +480,30 @@ const GanttChart = ({ records }) => {
           });
 
           // currDate
-          this.scene.camera.renderText({
-            text: currDatePos.shortText,
-            color: 'white',
-            size: 10,
-            textAlign: 'center',
-            position: [
-              linePosition[0] + currDatePos.leftHandWidth / 2,
-              linePosition[1] - height,
-            ],
-          });
+          if (currDatePos.fullWidth > 20) {
+            this.scene.camera.renderText({
+              text: currDatePos.shortText,
+              color: 'white',
+              size: 10,
+              textAlign: 'center',
+              position: [
+                linePosition[0] + currDatePos.leftHandWidth / 2,
+                linePosition[1] - height,
+              ],
+            });
+          }
 
           // higherDate
           if (itsBeginning && currDatePos.higherDate) {
+            const reminderWidth = Math.min(currDatePos.higherDate.end, camEdgePos.r) - currDatePos.higherDate.begin;
+            const textWidth = ctx.measureText(currDatePos.higherDate.fullText).width + 10;
             this.scene.camera.renderText({
               text: currDatePos.higherDate.fullText,
               color: 'white',
               size: 12,
               textAlign: 'center',
               position: [
-                linePosition[0] + Math.min(currDatePos.higherDate.fullWidth, startPosition[0] - linePosition[0]) / 2,
+                currDatePos.higherDate.begin + Math.max(reminderWidth / 2, textWidth / 2),
                 linePosition[1] - (height * 2),
               ],
             });
@@ -503,6 +512,20 @@ const GanttChart = ({ records }) => {
         }
         if (i >= 500)
           log({ i, minV: minimumVisibleTimeRange.name, msW: currMSWidth });
+        if (currDatePos?.higherDate) {
+          const reminderWidth = currDatePos.higherDate.end - camEdgePos.l;
+          const textWidth = ctx.measureText(currDatePos.higherDate.fullText).width + 10;
+          this.scene.camera.renderText({
+            text: currDatePos.higherDate.fullText,
+            color: 'white',
+            size: 12,
+            textAlign: 'center',
+            position: [
+              currDatePos.higherDate.end - Math.max(reminderWidth / 2, textWidth / 2),
+              startPosition[1] + this.size[1] - (15 * 2),
+            ],
+          });
+        }
       }
     }, {
       tag: 'timeline-short-lines',
