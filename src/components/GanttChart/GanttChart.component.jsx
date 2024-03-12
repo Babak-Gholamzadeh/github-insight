@@ -1,3 +1,4 @@
+/* eslint-disable no-lone-blocks */
 import { useEffect, useRef, useState } from 'react';
 import {
   log,
@@ -23,6 +24,16 @@ const PR_STATE_COLORS = {
   merged: [163, 113, 247, 1],
   closed: [248, 81, 73, 1],
 };
+
+const MONTH_FULL_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
+const MONTH_SHORT_NAMES = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
 
 const GanttChart = ({ records }) => {
   log({ ComponentRerendered: 'GanttChart' });
@@ -178,6 +189,32 @@ const GanttChart = ({ records }) => {
       tag: 'timeline-box',
     });
 
+    const getNumOfHoursPerDay = (year, month, day) =>
+      (new Date(year, month, day + 1).getTime() - new Date(year, month, day).getTime()) / 1000 / 60 / 60;
+
+    const getNumOfHoursPerMonth = (year, month) =>
+      (new Date(year, month + 1).getTime() - new Date(year, month).getTime()) / 1000 / 60 / 60;
+
+    const getNumOfHoursPerYear = year =>
+      (new Date(year + 1, 0).getTime() - new Date(year, 0).getTime()) / 1000 / 60 / 60;
+
+    const getNumOfHoursPastInDay = (year, month, day, hour) =>
+      (new Date(year, month, day, hour).getTime() - new Date(year, month, day).getTime()) / 1000 / 60 / 60;
+
+    const getNumOfHoursPastInMonth = (year, month, day) =>
+      (new Date(year, month, day).getTime() - new Date(year, month).getTime()) / 1000 / 60 / 60;
+
+    const getNumOfHoursPastInYear = (year, month) =>
+      (new Date(year, month).getTime() - new Date(year, 0).getTime()) / 1000 / 60 / 60;
+
+    const getNumOfDaysPerMonth = (year, month) =>
+      new Date(year, month + 1, 0).getDate();
+
+    const getNumOfDaysPerYear = year => Array
+      .from({ length: 12 })
+      .reduce((days, _, month) =>
+        days + getNumOfDaysPerMonth(year, month), 0);
+
     const getCurrDatePos = (msWidth, posX) => {
       const backInTimeMSs = posX / msWidth;
       const date = new Date(NOW + backInTimeMSs);
@@ -185,15 +222,24 @@ const GanttChart = ({ records }) => {
       const ms = {
         value: date.getMilliseconds(),
         min: 0,
+        max: 999,
         leftHandWidth: msWidth,
         fullWidth: msWidth,
         begin: posX - msWidth,
         end: posX,
+        unit: 'ms',
+        get fullText() {
+          return this.value.toString() + this.unit;
+        },
+        get shortText() {
+          return this.value.toString();
+        },
       };
 
       const sec = {
         value: date.getSeconds(),
         min: 0,
+        max: 59,
         leftHandWidth: ms.value * ms.fullWidth + ms.leftHandWidth,
         fullWidth: ms.fullWidth * 1000,
         get begin() {
@@ -202,11 +248,19 @@ const GanttChart = ({ records }) => {
         get end() {
           return posX + (this.fullWidth - this.leftHandWidth);
         },
+        unit: 's',
+        get fullText() {
+          return this.value.toString() + this.unit;
+        },
+        get shortText() {
+          return this.value.toString();
+        },
       };
 
       const min = {
         value: date.getMinutes(),
         min: 0,
+        max: 59,
         leftHandWidth: sec.value * sec.fullWidth + sec.leftHandWidth,
         fullWidth: sec.fullWidth * 60,
         get begin() {
@@ -215,11 +269,19 @@ const GanttChart = ({ records }) => {
         get end() {
           return posX + (this.fullWidth - this.leftHandWidth);
         },
+        unit: 'm',
+        get fullText() {
+          return this.value.toString() + this.unit;
+        },
+        get shortText() {
+          return this.value.toString();
+        },
       };
 
       const hour = {
         value: date.getHours(),
         min: 0,
+        max: 23,
         leftHandWidth: min.value * min.fullWidth + min.leftHandWidth,
         fullWidth: min.fullWidth * 60,
         get begin() {
@@ -228,50 +290,74 @@ const GanttChart = ({ records }) => {
         get end() {
           return posX + (this.fullWidth - this.leftHandWidth);
         },
+        unit: 'h',
+        get fullText() {
+          return this.value.toString() + this.unit;
+        },
+        get shortText() {
+          return this.value.toString();
+        },
       };
 
       const day = {
         value: date.getDate(),
         min: 1,
-        leftHandWidth: hour.value * hour.fullWidth + hour.leftHandWidth,
-        fullWidth: hour.fullWidth * 24,
+        max: 30,
+        get leftHandWidth() {
+          return getNumOfHoursPastInDay(year.value, month.value, this.value, hour.value) * hour.fullWidth + hour.leftHandWidth;
+        },
+        get fullWidth() {
+          return hour.fullWidth * getNumOfHoursPerDay(year.value, month.value, this.value);
+        },
         get begin() {
           return posX - this.leftHandWidth;
         },
         get end() {
           return posX + (this.fullWidth - this.leftHandWidth);
+        },
+        unit: 'd',
+        get fullText() {
+          return this.value.toString() + this.unit;
+        },
+        get shortText() {
+          return this.value.toString();
         },
       };
 
       const month = {
         value: date.getMonth(),
         min: 0,
-        leftHandWidth: Math.max(day.value - 1, 0) * day.fullWidth + day.leftHandWidth,
+        max: 11,
+        get leftHandWidth() {
+          return getNumOfHoursPastInMonth(year.value, month.value, day.value) * hour.fullWidth + day.leftHandWidth;
+        },
         get fullWidth() {
-          return getNumOfDaysPerMonth(year.value, this.value) * day.fullWidth;
+          return getNumOfHoursPerMonth(year.value, this.value) * hour.fullWidth;
         },
         get begin() {
           return posX - this.leftHandWidth;
         },
         get end() {
           return posX + (this.fullWidth - this.leftHandWidth);
+        },
+        unit: 'm',
+        get fullText() {
+          return MONTH_FULL_NAMES[this.value];
+        },
+        get shortText() {
+          return MONTH_SHORT_NAMES[this.value];
         },
       };
 
       const year = {
         value: date.getFullYear(),
         min: 0,
+        max: 10000,
         get leftHandWidth() {
-          return Array
-            .from({
-              length: month.value
-            })
-            .reduce((days, _, month) => days + getNumOfDaysPerMonth(this.value, month), 0) *
-            day.fullWidth +
-            month.leftHandWidth;
+          return getNumOfHoursPastInYear(this.value, month.value) * hour.fullWidth + month.leftHandWidth;
         },
         get fullWidth() {
-          return getNumOfDaysPerYear(this.value) * day.fullWidth;
+          return getNumOfHoursPerYear(this.value) * hour.fullWidth;
         },
         get begin() {
           return posX - this.leftHandWidth;
@@ -279,7 +365,31 @@ const GanttChart = ({ records }) => {
         get end() {
           return posX + (this.fullWidth - this.leftHandWidth);
         },
+        unit: 'y',
+        get fullText() {
+          return this.value.toString() + this.unit;
+        },
+        get shortText() {
+          return this.value.toString();
+        },
       };
+
+      {
+        ms.lowerDate = null;
+        ms.higherDate = sec;
+        sec.lowerDate = ms;
+        sec.higherDate = min;
+        min.lowerDate = sec;
+        min.higherDate = hour;
+        hour.lowerDate = min;
+        hour.higherDate = day;
+        day.lowerDate = hour;
+        day.higherDate = month;
+        month.lowerDate = day;
+        month.higherDate = year;
+        year.lowerDate = month;
+        year.higherDate = null;
+      }
 
       return {
         ms,
@@ -291,14 +401,6 @@ const GanttChart = ({ records }) => {
         year,
       };
     };
-
-    const getNumOfDaysPerMonth = (year, month) =>
-      new Date(year, month + 1, 0).getDate();
-
-    const getNumOfDaysPerYear = year => Array
-      .from({ length: 12 })
-      .reduce((days, _, month) =>
-        days + getNumOfDaysPerMonth(year, month), 0);
 
     const minVisibleWidth = 2;
 
@@ -333,16 +435,18 @@ const GanttChart = ({ records }) => {
       },
       async render() {
         const { currMSWidth } = this.parent;
-        const camSize = this.scene.camera.getSize();
         const camEdgePos = this.scene.camera.getEdgePositionsOnScene();
         const startPosition = this.getPositionOnScene();
 
         const minimumVisibleTimeRange = getMinimumVisibleTimeRange(currMSWidth);
         let linePosX = startPosition[0];
-        while (true) {
+        let i = 0;
+        while (true && i < 1000) {
+          i++;
           const {
             [minimumVisibleTimeRange.name]: currDatePos,
           } = getCurrDatePos(currMSWidth, linePosX);
+
           linePosX = currDatePos.begin;
           if (linePosX < camEdgePos.l - currDatePos.fullWidth)
             break;
@@ -352,31 +456,53 @@ const GanttChart = ({ records }) => {
             startPosition[1] + this.size[1],
           ];
 
-          const color = (currDatePos.value === currDatePos.min)
+          const itsBeginning = currDatePos.value === currDatePos.min;
+
+          const color = itsBeginning
             ? 'red'
             : 'white';
+
+          const height = 15;
 
           this.scene.camera.renderLine({
             position: linePosition,
             vertices: [
               [0, 0],
-              [0, -10],
+              [0, -height],
             ],
             color,
             lineWidth: 1,
           });
 
+          // currDate
           this.scene.camera.renderText({
-            text: currDatePos.value,
+            text: currDatePos.shortText,
             color: 'white',
             size: 10,
             textAlign: 'center',
             position: [
-              linePosition[0],
-              linePosition[1] - 20,
+              linePosition[0] + currDatePos.leftHandWidth / 2,
+              linePosition[1] - height,
             ],
           });
+
+          // higherDate
+          if (itsBeginning && currDatePos.higherDate) {
+            this.scene.camera.renderText({
+              text: currDatePos.higherDate.fullText,
+              color: 'white',
+              size: 12,
+              textAlign: 'center',
+              position: [
+                linePosition[0] + Math.min(currDatePos.higherDate.fullWidth, startPosition[0] - linePosition[0]) / 2,
+                linePosition[1] - (height * 2),
+              ],
+            });
+          }
+
         }
+        if (i >= 500)
+          log({ i, minV: minimumVisibleTimeRange.name, msW: currMSWidth });
       }
     }, {
       tag: 'timeline-short-lines',
@@ -451,7 +577,6 @@ const GanttChart = ({ records }) => {
     }, {
       tag: 'timeline-cursor-line',
     });
-
 
     // Tracks
     const tracks = scene.createObject(EmptyObject, {
