@@ -441,10 +441,24 @@ const GanttChart = ({ records }) => {
         const startPosition = this.getPositionOnScene();
 
         const minimumVisibleTimeRange = getMinimumVisibleTimeRange(currMSWidth);
+
         let linePosX = startPosition[0];
         let i = 0;
         let currDatePos;
+        ({ [minimumVisibleTimeRange.name]: currDatePos } = getCurrDatePos(currMSWidth, linePosX));
+        const itsBeginning = currDatePos.value === currDatePos.min;
+
         const height = 15;
+        const maxWidth = 60;
+        let currWidth = currDatePos.fullWidth;
+        log({ currWidth });
+        let textColorAlpha = 1;
+        let lineHeight = height;
+        let lineWidth = 1;
+        let smallFontSize = 12;
+        let largeFontSize = 16;
+        let currDateYOffset = height;
+        let higherDateYOffset = 0;
 
         while (true && i < 1000) {
           i++;
@@ -459,38 +473,58 @@ const GanttChart = ({ records }) => {
             startPosition[1] + this.size[1],
           ];
 
-          // if(currDatePos.value === currDatePos.max)
-          //   itsEnding = true;
           const itsBeginning = currDatePos.value === currDatePos.min;
 
-          const color = itsBeginning
+          const color = itsBeginning && false
             ? 'red'
             : 'white';
 
+          textColorAlpha = 1;
+          lineHeight = height;
+          lineWidth = 1;
+          smallFontSize = 12;
+          largeFontSize = 16;
+          currDateYOffset = height;
+          higherDateYOffset = 0;
+          if (currWidth < maxWidth) {
+            smallFontSize = Math.max((currWidth + 20) / (maxWidth + 20) * 12, 8);
+            textColorAlpha = (currWidth - 10) / (maxWidth - 10);
+            lineHeight = (currWidth + 10) / (maxWidth + 10) * height;
+            currDateYOffset = (currWidth + 10) / (maxWidth + 10) * height;
+            lineWidth = (currWidth - 0) / maxWidth;
+            higherDateYOffset = (1 - currWidth / maxWidth) * 18;
+            largeFontSize = (currWidth / maxWidth) * 4 + 12;
+            if (itsBeginning) {
+              lineHeight += (height - lineHeight) / 2;
+              lineWidth = 1;
+            }
+          }
 
-          this.scene.camera.renderLine({
-            position: linePosition,
-            vertices: [
-              [0, 0],
-              [0, -height],
-            ],
-            color,
-            lineWidth: 1,
-          });
+          if (lineHeight > 0) {
+            this.scene.camera.renderLine({
+              position: linePosition,
+              vertices: [
+                [0, 0],
+                [0, -lineHeight],
+              ],
+              color,
+              lineWidth,
+            });
+          }
 
           // currDate
-          if (currDatePos.fullWidth > 20) {
-            ctx.font = `10px Segoe UI`;
+          if (textColorAlpha > 0) {
+            ctx.font = `${smallFontSize}px Segoe UI`;
             const textWidth = ctx.measureText(currDatePos.shortText).width;
             const nearRight = Math.min(currDatePos.end, camEdgePos.r + textWidth);
             const nearLeft = Math.max(currDatePos.begin, camEdgePos.l - textWidth);
             const closestDistance = nearRight - nearLeft;
             const textPositionX = nearLeft + closestDistance / 2;
-            const textPositionY = startPosition[1] + this.size[1] - height;
+            const textPositionY = startPosition[1] + this.size[1] - currDateYOffset;
             this.scene.camera.renderText({
               text: currDatePos.shortText,
-              color: 'white',
-              size: 10,
+              color: `rgba(255, 255, 255, ${textColorAlpha})`,
+              size: smallFontSize,
               textAlign: 'center',
               position: [
                 textPositionX,
@@ -501,17 +535,17 @@ const GanttChart = ({ records }) => {
 
           // higherDate
           if (itsBeginning && currDatePos.higherDate) {
-            ctx.font = `12px Segoe UI`;
+            ctx.font = `${largeFontSize}px Segoe UI`;
             const textWidth = ctx.measureText(currDatePos.higherDate.fullText).width;
             const nearRight = Math.min(currDatePos.higherDate.end, camEdgePos.r + textWidth);
             const nearLeft = Math.max(currDatePos.higherDate.begin, camEdgePos.l - textWidth);
             const closestDistance = nearRight - nearLeft;
             const textPositionX = nearLeft + closestDistance / 2;
-            const textPositionY = startPosition[1] + this.size[1] - (height * 2);  
+            const textPositionY = startPosition[1] + this.size[1] - (height * 2) + higherDateYOffset - 3;
             this.scene.camera.renderText({
               text: currDatePos.higherDate.fullText,
               color: 'white',
-              size: 12,
+              size: largeFontSize,
               textAlign: 'center',
               position: [
                 textPositionX,
@@ -523,18 +557,18 @@ const GanttChart = ({ records }) => {
         }
         if (i >= 500)
           log({ i, minV: minimumVisibleTimeRange.name, msW: currMSWidth });
-        if (currDatePos.fullWidth > 20) {
-          ctx.font = `10px Segoe UI`;
+        if (textColorAlpha > 0) {
+          ctx.font = `${smallFontSize}px Segoe UI`;
           const textWidth = ctx.measureText(currDatePos.shortText).width;
           const nearRight = Math.min(currDatePos.end, camEdgePos.r + textWidth);
           const nearLeft = Math.max(currDatePos.begin, camEdgePos.l - textWidth);
           const closestDistance = nearRight - nearLeft;
           const textPositionX = nearLeft + closestDistance / 2;
-          const textPositionY = startPosition[1] + this.size[1] - height;
+          const textPositionY = startPosition[1] + this.size[1] - lineHeight;
           this.scene.camera.renderText({
             text: currDatePos.shortText,
-            color: 'white',
-            size: 10,
+            color: `rgba(255, 255, 255, ${textColorAlpha})`,
+            size: smallFontSize,
             textAlign: 'center',
             position: [
               textPositionX,
@@ -543,17 +577,17 @@ const GanttChart = ({ records }) => {
           });
         }
         if (currDatePos?.higherDate) {
-          ctx.font = `12px Segoe UI`;
+          ctx.font = `${largeFontSize}px Segoe UI`;
           const textWidth = ctx.measureText(currDatePos.higherDate.fullText).width;
           const nearRight = Math.min(currDatePos.higherDate.end, camEdgePos.r + textWidth);
           const nearLeft = Math.max(currDatePos.higherDate.begin, camEdgePos.l - textWidth);
           const closestDistance = nearRight - nearLeft;
           const textPositionX = nearLeft + closestDistance / 2;
-          const textPositionY = startPosition[1] + this.size[1] - (height * 2);
+          const textPositionY = startPosition[1] + this.size[1] - (height * 2) + higherDateYOffset - 3;
           this.scene.camera.renderText({
             text: currDatePos.higherDate.fullText,
             color: 'white',
-            size: 12,
+            size: largeFontSize,
             textAlign: 'center',
             position: [
               textPositionX,
