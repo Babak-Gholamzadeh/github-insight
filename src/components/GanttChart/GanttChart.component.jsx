@@ -85,13 +85,13 @@ const GanttChart = ({ records }) => {
     if (!ctx) return;
     const scene = refScene.current;
     const TIMELINE_HEIGHT = 60;
-
+    const INIT_MS_WIDTH = .0000005;
     // Camera
     const camera = refCamera.current = scene.createCamera({
       ctx, viewport,
       dragPos: null,
+      mostLeftPositionX: -(NOW * INIT_MS_WIDTH - (viewport.size[0] / 2)),
       update(dt) {
-        // log({ updateCM: dt });
         const mouse = this.scene.mouse;
         if (!this.dragPos && mouse.isBtnDown('left')) {
           const mousePos = mouse.getPositionOnViewport();
@@ -102,11 +102,11 @@ const GanttChart = ({ records }) => {
           this.dragPos = null;
         }
 
-        if (this.dragPos) {
+        if (this.dragPos && this.transform.position[0] > this.mostLeftPositionX) {
           const currMousePos = mouse.getPositionOnViewport();
           const diffX = currMousePos[0] - this.dragPos[0];
           const diffY = currMousePos[1] - this.dragPos[1];
-          this.transform.position[0] -= diffX;
+          this.transform.position[0] = Math.max(this.transform.position[0] - diffX, this.mostLeftPositionX);
           this.transform.position[1] = Math.max(
             this.transform.position[1] + diffY,
             this.getSize()[1] / 2 - TIMELINE_HEIGHT,
@@ -153,8 +153,10 @@ const GanttChart = ({ records }) => {
     });
 
     // Timeline
+    const MAX_MS_WIDTH = 60;
+    const MIN_MS_WIDTH = 0.0000000015;
     const timeline = refTimeline.current = camera.createObject(EmptyObject, {
-      currMSWidth: .0000005,
+      currMSWidth: INIT_MS_WIDTH,
       size: [
         camera.viewport.size[0],
         TIMELINE_HEIGHT,
@@ -164,10 +166,15 @@ const GanttChart = ({ records }) => {
         const { scrollDelta } = mouse;
         if (keyboard.isKeyDown('shift') && scrollDelta) {
           const changeScale = scrollDelta * .1;
-          this.currMSWidth += this.currMSWidth * changeScale;
-          const mousePos = mouse.getPositionOnScene();
-          camera.transform.position[0] += mousePos[0] * changeScale;
-          // log({ updateTM: this.currMSWidth });
+          if (
+            (changeScale > 0 && this.currMSWidth < MAX_MS_WIDTH) ||
+            (changeScale < 0 && this.currMSWidth > MIN_MS_WIDTH)
+          ) {
+            this.currMSWidth = Math.max(Math.min(this.currMSWidth + this.currMSWidth * changeScale, MAX_MS_WIDTH), MIN_MS_WIDTH);
+            const mousePos = mouse.getPositionOnScene();
+            camera.mostLeftPositionX = -(NOW * this.currMSWidth - (camera.viewport.size[0] / 2));
+            camera.transform.position[0] = Math.max(camera.transform.position[0] + mousePos[0] * changeScale, camera.mostLeftPositionX);
+          }
         }
       },
     }, {
@@ -369,7 +376,7 @@ const GanttChart = ({ records }) => {
         },
         unit: 'y',
         get fullText() {
-          return this.value.toString() + this.unit;
+          return this.value.toString();
         },
         get shortText() {
           return this.value.toString();
@@ -451,7 +458,6 @@ const GanttChart = ({ records }) => {
         const height = 15;
         const maxWidth = 60;
         let currWidth = currDatePos.fullWidth;
-        log({ currWidth });
         let textColorAlpha = 1;
         let lineHeight = height;
         let lineWidth = 1;
@@ -677,11 +683,18 @@ const GanttChart = ({ records }) => {
       trackLineHeight: 1,
       update(dt) {
         const { scrollDelta } = this.scene.mouse;
-        if (this.scene.keyboard.isKeyDown('alt') && scrollDelta) {
-          this.trackHeight += this.trackHeight * (scrollDelta * .1);
+        const changeScale = scrollDelta * .1;
+        const MAX_HEIGHT = this.scene.camera.viewport.size[1] - TIMELINE_HEIGHT;
+        const MIN_HEIGHT = 1;
+        if (this.scene.keyboard.isKeyDown('alt') &&
+          (
+            (changeScale > 0 && this.trackHeight < MAX_HEIGHT) ||
+            (changeScale < 0 && this.trackHeight > MIN_HEIGHT)
+          )
+        ) {
+          this.trackHeight = Math.max(Math.min(this.trackHeight + this.trackHeight * changeScale, MAX_HEIGHT), MIN_HEIGHT);
           this.trackLineHeight = this.trackHeight / 40;
           // this.trackPadding = 2 * this.trackHeight / 40;
-
         }
       },
       async render() {
