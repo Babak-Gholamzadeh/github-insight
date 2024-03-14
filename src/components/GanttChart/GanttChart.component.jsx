@@ -4,6 +4,7 @@ import {
   log,
   getHumanReadableTimeAgo,
   getReadableTimePeriodShorter,
+  getReadableTimePeriod,
 } from '../../utils';
 import {
   Engine,
@@ -15,6 +16,10 @@ import {
   RectImage,
   Text,
 } from './engine';
+import draftPullRequestIcon from '../../assets/images/git-pull-request-draft-svgrepo-com.svg';
+import openPullRequestIcon from '../../assets/images/git-pull-request-open-svgrepo-com.svg';
+import mergedPullRequestIcon from '../../assets/images/git-merge-svgrepo-com.svg';
+import closedPullRequestIcon from '../../assets/images/git-pull-request-closed-svgrepo-com.svg';
 
 import './GanttChart.style.scss';
 
@@ -23,6 +28,13 @@ const PR_STATE_COLORS = {
   draft: [133, 141, 151, 1],
   merged: [163, 113, 247, 1],
   closed: [248, 81, 73, 1],
+};
+
+const PR_STATE_ICONS = {
+  open: openPullRequestIcon,
+  draft: draftPullRequestIcon,
+  merged: mergedPullRequestIcon,
+  closed: closedPullRequestIcon,
 };
 
 const MONTH_FULL_NAMES = [
@@ -871,6 +883,7 @@ const GanttChart = ({ records }) => {
 
         this.objects = [];
         this.trackOccupancy.empty();
+        const { camera } = this.scene;
 
         records.forEach(record => {
           const closedAtTime = new Date(record.closed_at).getTime() || NOW;
@@ -907,45 +920,6 @@ const GanttChart = ({ records }) => {
           }, {
             tag: 'pr-child',
             renderOrder: records.length - trackIdx,
-          });
-          pr.toolTip = pr.createObject(Rect, {
-            size: [200, 100],
-            backgroundColor: 'rgba(255, 255, 255, 1)',
-            radius: 20,
-            visible: false,
-            enable: false,
-            show() { this.visible = this.enable = true; },
-            hide() { this.visible = this.enable = false; },
-            update(dt) {
-              const mousePos = this.scene.mouse.getPositionOnScene();
-              const parentPos = this.parent.getPositionOnScene();
-              const x = mousePos[0] - parentPos[0] + this.size[0];
-              this.transform.position = [
-                x,
-                tracks.trackHeight,
-              ];
-            }
-          }, {
-            tag: 'pr-tooltip',
-          });
-          pr.toolTip.createObject(Text, {
-            text: [
-              `${record.state === 'open' ? 'has' : 'had'} been open for ${getReadableTimePeriodShorter(record.longRunning)}`,
-              `Created ${getHumanReadableTimeAgo(record.created_at)}`,
-            ].join('\n'),
-            size: 12,
-            color: '#000',
-            lineHeight: 20,
-            multiline: true,
-            margin: 10,
-            update(dt) {
-              this.transform.position = [
-                -this.parent.size[0] + this.margin,
-                this.parent.size[1] - this.lineHeight - this.margin,
-              ];
-            }
-          }, {
-            tag: 'pr-tooltip-text',
           });
           pr.userAvatar = pr.createObject(RectImage, {
             url: record.user.avatar_url,
@@ -995,6 +969,127 @@ const GanttChart = ({ records }) => {
             }
           }, {
             tag: 'pr-title',
+          });
+          pr.toolTip = pr.createObject(Rect, {
+            size: [280, 80],
+            backgroundColor: 'rgba(255, 255, 255, 1)',
+            radius: 10,
+            visible: false,
+            enable: false,
+            paddingSide: 5,
+            paddingTop: 10,
+            show() { this.visible = this.enable = true; },
+            hide() { this.visible = this.enable = false; },
+            update(dt) {
+              const mousePos = this.scene.mouse.getPositionOnScene();
+              const parentPos = this.parent.getPositionOnScene();
+              const x = mousePos[0] - parentPos[0] + this.size[0];
+              this.transform.position = [
+                x,
+                tracks.trackHeight,
+              ];
+            }
+          }, {
+            tag: 'pr-tooltip',
+          });
+          const prTooltipIcon = pr.toolTip.createObject(RectImage, {
+            url: PR_STATE_ICONS[record.state],
+            backgroundColor: 'rgba(255, 255, 255, .5)',
+            size: [15, 15],
+            marginRight: 5,
+            marginBottom: 10,
+            update(dt) {
+              const x = -this.parent.size[0] + this.size[0] + this.parent.paddingSide;
+              const y = this.parent.size[1] - this.size[1] - this.parent.paddingTop;
+              this.transform.position = [x, y];
+            }
+          }, {
+            tag: 'pr-tooltip-icon',
+          });
+          const prTooltipTitle = pr.toolTip.createObject(Text, {
+            text: record.title,
+            color: '#1d6bd5',
+            size: 14,
+            maxWidth: pr.toolTip.size[0] - pr.toolTip.paddingSide - prTooltipIcon.size[0] - prTooltipIcon.marginRight - 10 - 25,
+            weight: 400,
+            marginRight: 10,
+            marginBottom: 10,
+            update(dt) {
+              const x = prTooltipIcon.transform.position[0] + prTooltipIcon.marginRight;
+              const y = prTooltipIcon.transform.position[1] + 2;
+              this.transform.position = [x, y];
+              this.maxWidth = pr.toolTip.size[0] - pr.toolTip.paddingSide - prTooltipIcon.size[0] - prTooltipIcon.marginRight - 10 - 25;
+            }
+          }, {
+            tag: 'pr-tooltip-title',
+          });
+          pr.toolTip.createObject(RectImage, {
+            url: record.user.avatar_url,
+            backgroundColor: 'rgba(255, 255, 255, .5)',
+            size: [25, 25],
+            radius: 25,
+            update(dt) {
+              const x = -pr.toolTip.paddingSide;
+              const y = prTooltipTitle.transform.position[1] - 7;
+              this.transform.position = [x, y];
+            }
+          }, {
+            tag: 'pr-tooltip-avatar',
+          });
+          const prTooltipRepoTitle = pr.toolTip.createObject(Text, {
+            text: record.repo.full_name,
+            color: '#000',
+            size: 10,
+            maxWidth: 100,
+            marginRight: 10,
+            marginBottom: 10,
+            weight: 400,
+            update(dt) {
+              const x = prTooltipIcon.transform.position[0] + prTooltipIcon.marginRight;
+              const y = prTooltipIcon.transform.position[1] - prTooltipIcon.marginBottom - this.size + 4;
+              this.transform.position = [x, y];
+            }
+          }, {
+            tag: 'pr-tooltip-repo-title',
+          });
+          pr.toolTip.createObject(Text, {
+            text: `Created ${getHumanReadableTimeAgo(record.created_at)}`,
+            color: '#333',
+            size: 10,
+            maxWidth: 100,
+            marginRight: 10,
+            marginBottom: 10,
+            update(dt) {
+              const x = prTooltipRepoTitle.transform.position[0] +
+                prTooltipRepoTitle.acutalWith +
+                prTooltipRepoTitle.marginRight;
+              const y = prTooltipRepoTitle.transform.position[1];
+              this.transform.position = [x, y];
+            }
+          }, {
+            tag: 'pr-tooltip-createdat',
+          });
+          pr.toolTip.createObject(Text, {
+            text: `It ${record.state === 'open' ? 'has' : 'had'} been open for ${getReadableTimePeriod(record.longRunning)}`,
+            color: '#000',
+            size: 13,
+            weight: 400,
+            maxWidth: pr.toolTip.size[0] - pr.toolTip.padding,
+            marginRight: 10,
+            marginBottom: 10,
+            update(dt) {
+              const x = prTooltipRepoTitle.transform.position[0];
+              const y = prTooltipRepoTitle.transform.position[1] -
+                prTooltipRepoTitle.marginBottom -
+                this.size;
+              this.transform.position = [x, y];
+              const stuffSizeInToolTip = (pr.toolTip.paddingSide * 2) + prTooltipIcon.size[0] + prTooltipIcon.marginRight + prTooltipRepoTitle.marginRight;
+              log({ acutalWith: this.acutalWith, prToolW: pr.toolTip.size[0], prS: stuffSizeInToolTip });
+              if (this.acutalWith > pr.toolTip.size[0] - stuffSizeInToolTip)
+                pr.toolTip.size[0] = this.acutalWith + stuffSizeInToolTip;
+            }
+          }, {
+            tag: 'pr-tooltip-longrunning',
           });
         });
       },

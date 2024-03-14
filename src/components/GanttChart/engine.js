@@ -362,6 +362,7 @@ export class Camera extends EngineEntity {
     this.ctx.font = `${weight} ${size}px Segoe UI`;
     this.ctx.fillStyle = color;
     this.ctx.textAlign = textAlign;
+    let acutalWith = this.ctx.measureText(text).width;
 
     if (multiline) {
       text.toString().split('\n').forEach((line, i) => {
@@ -373,22 +374,24 @@ export class Camera extends EngineEntity {
       });
     } else {
       if (maxWidth <= 0)
-        return;
+        return acutalWith;
 
-      if (this.ctx.measureText(text).width > maxWidth) {
+      if (acutalWith > maxWidth) {
         const dots = '...';
         const dotsWidth = this.ctx.measureText(dots).width;
         if (dotsWidth > maxWidth)
-          return;
+          return acutalWith;
         let truncatedText = '';
         let i = 0;
         while (this.ctx.measureText(truncatedText).width + dotsWidth < maxWidth) {
           truncatedText += text[i++];
         }
         text = truncatedText.slice(0, -1) + dots;
+        acutalWith = this.ctx.measureText(text).width;
       }
       this.ctx.fillText(text, ...posOnViewport);
     }
+    return acutalWith;
   }
 
   renderLine({
@@ -566,8 +569,10 @@ export class RectImage extends Rect {
 }
 
 export class Text extends EmptyObject {
+  acutalWith = 0;
+
   async render() {
-    this.scene.camera.renderText({
+    this.acutalWith = this.scene.camera.renderText({
       weight: this.weight,
       size: this.size,
       color: this.color,
