@@ -38,7 +38,7 @@ export class Engine {
 
     let frameCount = 0;
 
-    (async function engineLoop() {
+    (function engineLoop() {
       frameCount++;
       const dt = this.fps.getDelta();
 
@@ -46,7 +46,7 @@ export class Engine {
 
       this.scene.updateObjects(dt);
 
-      await this.scene.renderObjects();
+      this.scene.renderObjects();
 
       // this.scene.keyboard?.reset();
       this.scene.mouse?.reset();
@@ -142,7 +142,7 @@ class EngineEntity {
 
   constructor({ tag, position, ...restOptions } = {}) {
     this.tag = tag || this.constructor.name;
-    console.log('Engine > Constructor:', this.tag);
+    // console.log('Engine > Constructor:', this.tag);
     position && (this.transform.position = position);
     Object.assign(this, restOptions);
   }
@@ -194,16 +194,16 @@ class EngineEntity {
   // override
   update(dt) { }
 
-  async renderObjects() {
-    await this.render();
+  renderObjects() {
+    this.render();
     for (const object of this.getObjectsByOrder('renderOrder')) {
       if (object.visible)
-        await object.renderObjects();
+        object.renderObjects();
     }
   }
 
   // override
-  async render() { }
+  render() { }
 }
 
 export class Scene extends EngineEntity {
@@ -253,7 +253,7 @@ export class Scene extends EngineEntity {
     mouse.scene = this;
   }
 
-  async render() {
+  render() {
     if (this.backgroundColor) {
       const { r, b } = this.camera.getEdgePositionsOnScene();
       this.camera.renderRoundRect({
@@ -500,7 +500,7 @@ export class EmptyObject extends EngineEntity {
 }
 
 export class Line extends EmptyObject {
-  async render() {
+  render() {
     const position = this.getPositionOnScene();
     this.scene.camera.renderLine({
       color: this.color,
@@ -513,7 +513,7 @@ export class Line extends EmptyObject {
 }
 
 export class Ploygon extends EmptyObject {
-  async render() {
+  render() {
     const position = this.getPositionOnScene();
     this.scene.camera.renderPloygon({
       backgroundColor: this.backgroundColor,
@@ -532,7 +532,7 @@ export class Rect extends EmptyObject {
     this.size = this.size || [0, 0];
   }
 
-  async render() {
+  render() {
     const position = this.getPositionOnScene();
     const size = this.getSize();
     this.scene.camera.renderRoundRect({
@@ -553,7 +553,7 @@ export class RectImage extends Rect {
     this.img.src = this.url;
     this.img.onload = () => this.loadedImage = this.img;
   }
-  async render() {
+  render() {
     if (!this.loadedImage)
       return super.render();
 
@@ -571,7 +571,7 @@ export class RectImage extends Rect {
 export class Text extends EmptyObject {
   acutalWith = 0;
 
-  async render() {
+  render() {
     this.acutalWith = this.scene.camera.renderText({
       weight: this.weight,
       size: this.size,

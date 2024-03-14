@@ -470,7 +470,7 @@ const GanttChart = ({ records }) => {
       update(dt) {
         this.size = this.parent.size;
       },
-      async render() {
+      render() {
         const { currMSWidth } = this.parent;
         const camEdgePos = this.scene.camera.getEdgePositionsOnScene();
         const camSize = this.scene.camera.getSize();
@@ -783,7 +783,7 @@ const GanttChart = ({ records }) => {
         const sec = cursorTime.getSeconds().toString().padStart(2, '0');
         const ms = cursorTime.getMilliseconds().toString().padStart(3, '0');
         // eslint-disable-next-line default-case
-        switch (timeline.minimumVisibleTimeRange.name) {
+        switch (timeline.minimumVisibleTimeRange?.name) {
           case 'ms':
             this.text = `${ms} ms`;
             break;
@@ -820,7 +820,7 @@ const GanttChart = ({ records }) => {
         const { scrollDelta } = this.scene.mouse;
         const changeScale = scrollDelta * .1;
         const MAX_HEIGHT = this.scene.camera.viewport.size[1] - TIMELINE_HEIGHT;
-        const MIN_HEIGHT = 1;
+        const MIN_HEIGHT = .5;
         if (this.scene.keyboard.isKeyDown('alt') &&
           (
             (changeScale > 0 && this.trackHeight < MAX_HEIGHT) ||
@@ -832,7 +832,7 @@ const GanttChart = ({ records }) => {
           // this.trackPadding = 2 * this.trackHeight / 40;
         }
       },
-      async render() {
+      render() {
         if (this.trackLineHeight < .1)
           return;
         const { camera } = this.scene;
@@ -883,7 +883,6 @@ const GanttChart = ({ records }) => {
 
         this.objects = [];
         this.trackOccupancy.empty();
-        const { camera } = this.scene;
 
         records.forEach(record => {
           const closedAtTime = new Date(record.closed_at).getTime() || NOW;
@@ -897,6 +896,7 @@ const GanttChart = ({ records }) => {
           const pr = this.createObject(Rect, {
             backgroundColor: `rgba(${PR_STATE_COLORS[record.state]})`,
             radius: 5,
+            // visible: false,
             update(dt) {
               this.size = [
                 w * timeline.currMSWidth,
@@ -911,10 +911,10 @@ const GanttChart = ({ records }) => {
                 const BGcolor = [...PR_STATE_COLORS[record.state]];
                 BGcolor[3] = 1;
                 this.backgroundColor = `rgba(${BGcolor})`;
-                this.toolTip.show();
+                this.toolTip?.show();
               } else if (this.onMouseOut()) {
                 this.backgroundColor = `rgba(${PR_STATE_COLORS[record.state]})`;
-                this.toolTip.hide();
+                this.toolTip?.hide();
               }
             },
           }, {
