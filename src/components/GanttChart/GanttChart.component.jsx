@@ -35,6 +35,21 @@ const MONTH_SHORT_NAMES = [
   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
 ];
 
+const BG_HIGHLIGHT_COLORS = (op) => [
+  `rgba(255, 215, 0, ${op})`,     // Gold
+  `rgba(255, 105, 180, ${op})`,   // Pink
+  `rgba(0, 250, 154, ${op})`,     // Medium Spring Green
+  `rgba(30, 144, 255, ${op})`,    // Dodger Blue
+  `rgba(255, 140, 0, ${op})`,     // Dark Orange
+  `rgba(138, 43, 226, ${op})`,    // Blue Violet
+  `rgba(50, 205, 50, ${op})`,     // Lime Green
+  `rgba(255, 69, 0, ${op})`,      // Red Orange
+  `rgba(255, 99, 71, ${op})`,     // Tomato
+  `rgba(139, 69, 19, ${op})`,     // Saddle Brown
+  `rgba(75, 0, 130, ${op})`,      // Indigo
+  `rgba(85, 107, 47, ${op})`,     // Dark Olive Green
+];
+
 const GanttChart = ({ records }) => {
   log({ ComponentRerendered: 'GanttChart' });
   const refWrapper = useRef();
@@ -446,6 +461,7 @@ const GanttChart = ({ records }) => {
       async render() {
         const { currMSWidth } = this.parent;
         const camEdgePos = this.scene.camera.getEdgePositionsOnScene();
+        const camSize = this.scene.camera.getSize();
         const startPosition = this.getPositionOnScene();
 
         timeline.minimumVisibleTimeRange = getMinimumVisibleTimeRange(currMSWidth);
@@ -465,6 +481,7 @@ const GanttChart = ({ records }) => {
         let largeFontSize = 16;
         let currDateYOffset = height;
         let higherDateYOffset = 0;
+        const MAX_BG_HIGHLIGHT_OP = .05;
 
         while (true && i < 1000) {
           i++;
@@ -481,9 +498,40 @@ const GanttChart = ({ records }) => {
 
           const itsBeginning = currDatePos.value === currDatePos.min;
 
-          const color = itsBeginning && false
-            ? 'red'
-            : 'white';
+          if (currDatePos.higherDate && itsBeginning) {
+            const hAlpha = Math.min(currDatePos.higherDate.fullWidth / camSize[0], 1) * MAX_BG_HIGHLIGHT_OP;
+            const BG_COLORS = BG_HIGHLIGHT_COLORS(hAlpha);
+            this.scene.camera.renderRoundRect({
+              backgroundColor: BG_COLORS[currDatePos.higherDate.value % BG_COLORS.length],
+              position: [
+                currDatePos.higherDate.begin,
+                camEdgePos.b,
+              ],
+              size: [
+                -currDatePos.higherDate.fullWidth,
+                camSize[1],
+              ],
+            });
+
+            if (currDatePos.higherDate.higherDate) {
+              const hhAlpha = MAX_BG_HIGHLIGHT_OP - hAlpha;
+              const itsBeginning = currDatePos.higherDate.value === currDatePos.higherDate.min;
+              if (itsBeginning) {
+                const BG_COLORS = BG_HIGHLIGHT_COLORS(hhAlpha);
+                this.scene.camera.renderRoundRect({
+                  backgroundColor: BG_COLORS[currDatePos.higherDate.higherDate.value % BG_COLORS.length],
+                  position: [
+                    currDatePos.higherDate.higherDate.begin,
+                    camEdgePos.b,
+                  ],
+                  size: [
+                    -currDatePos.higherDate.higherDate.fullWidth,
+                    camSize[1],
+                  ],
+                });
+              }
+            }
+          }
 
           textColorAlpha = 1;
           lineHeight = height;
@@ -513,7 +561,7 @@ const GanttChart = ({ records }) => {
                 [0, 0],
                 [0, -lineHeight],
               ],
-              color,
+              color: 'white',
               lineWidth,
             });
           }
@@ -563,6 +611,43 @@ const GanttChart = ({ records }) => {
         }
         if (i >= 500)
           log({ i, minV: timeline.minimumVisibleTimeRange.name, msW: currMSWidth });
+
+
+        if (currDatePos.higherDate) {
+          const hAlpha = Math.min(currDatePos.higherDate.fullWidth / camSize[0], 1) * MAX_BG_HIGHLIGHT_OP;
+          const BG_COLORS = BG_HIGHLIGHT_COLORS(hAlpha);
+          this.scene.camera.renderRoundRect({
+            backgroundColor: BG_COLORS[currDatePos.higherDate.value % BG_COLORS.length],
+            position: [
+              currDatePos.higherDate.end,
+              camEdgePos.b,
+            ],
+            size: [
+              currDatePos.higherDate.fullWidth,
+              camSize[1],
+            ],
+          });
+
+          if (currDatePos.higherDate.higherDate) {
+            const hhAlpha = MAX_BG_HIGHLIGHT_OP - hAlpha;
+            const itsBeginning = currDatePos.higherDate.value === currDatePos.higherDate.min;
+            if (itsBeginning) {
+              const BG_COLORS = BG_HIGHLIGHT_COLORS(hhAlpha);
+              this.scene.camera.renderRoundRect({
+                backgroundColor: BG_COLORS[currDatePos.higherDate.higherDate.value % BG_COLORS.length],
+                position: [
+                  currDatePos.higherDate.higherDate.end,
+                  camEdgePos.b,
+                ],
+                size: [
+                  currDatePos.higherDate.higherDate.fullWidth,
+                  camSize[1],
+                ],
+              });
+            }
+          }
+        }
+
         if (textColorAlpha > 0) {
           ctx.font = `${smallFontSize}px Segoe UI`;
           const textWidth = ctx.measureText(currDatePos.shortText).width;
@@ -671,7 +756,7 @@ const GanttChart = ({ records }) => {
       size: 12,
       text: '',
       textAlign: 'center',
-      weight: 400,      
+      weight: 400,
       update(dt) {
         this.transform.position = [
           0,
@@ -686,7 +771,7 @@ const GanttChart = ({ records }) => {
         const sec = cursorTime.getSeconds().toString().padStart(2, '0');
         const ms = cursorTime.getMilliseconds().toString().padStart(3, '0');
         // eslint-disable-next-line default-case
-        switch(timeline.minimumVisibleTimeRange.name) {
+        switch (timeline.minimumVisibleTimeRange.name) {
           case 'ms':
             this.text = `${ms} ms`;
             break;
