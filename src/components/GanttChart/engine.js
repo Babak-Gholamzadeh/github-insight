@@ -45,7 +45,7 @@ export class Engine {
       this.scene.camera.clearViewport();
 
       this.scene.updateObjects(dt);
-  
+
       await this.scene.renderObjects();
 
       // this.scene.keyboard?.reset();
@@ -397,7 +397,6 @@ export class Camera extends EngineEntity {
     position = [0, 0],
     vertices = [[0, 0]],
     shadow = null,
-
   } = {}) {
     const verticesOnViewport = vertices
       .map(vectex => this.convertPosScene2Viewport([
@@ -429,6 +428,7 @@ export class Camera extends EngineEntity {
     lineWidth = 1,
     position = [0, 0],
     vertices = [[0, 0]],
+    shadow = null,
   } = {}) {
     const verticesOnViewport = vertices
       .map(vectex => this.convertPosScene2Viewport([
@@ -444,8 +444,16 @@ export class Camera extends EngineEntity {
     this.ctx.strokeStyle = borderColor;
     this.ctx.lineWidth = lineWidth;
     this.ctx.closePath();
+    if (shadow) {
+      this.ctx.shadowColor = shadow.color || borderColor;
+      this.ctx.shadowBlur = shadow.blur ?? 10;
+    }
     this.ctx.stroke();
     this.ctx.fill();
+    if (shadow) {
+      this.ctx.shadowColor = 'transparent';
+      this.ctx.shadowBlur = 0;
+    }
     this.ctx.restore();
   }
 }
@@ -510,6 +518,7 @@ export class Ploygon extends EmptyObject {
       lineWidth: this.lineWidth,
       position,
       vertices: this.vertices,
+      shadow: this.shadow,
     });
   }
 }

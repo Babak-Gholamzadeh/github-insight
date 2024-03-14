@@ -157,6 +157,7 @@ const GanttChart = ({ records }) => {
     const MIN_MS_WIDTH = 0.0000000015;
     const timeline = refTimeline.current = camera.createObject(EmptyObject, {
       currMSWidth: INIT_MS_WIDTH,
+      minimumVisibleTimeRange: null,
       size: [
         camera.viewport.size[0],
         TIMELINE_HEIGHT,
@@ -188,7 +189,7 @@ const GanttChart = ({ records }) => {
     // Timeline > background
     timeline.createObject(Rect, {
       // backgroundColor: '#faa',
-      backgroundColor: 'rgba(0, 0, 0, 1)',
+      backgroundColor: 'rgba(0, 0, 0, .7)',
       update(dt) {
         this.size = this.parent.size;
       }
@@ -447,13 +448,12 @@ const GanttChart = ({ records }) => {
         const camEdgePos = this.scene.camera.getEdgePositionsOnScene();
         const startPosition = this.getPositionOnScene();
 
-        const minimumVisibleTimeRange = getMinimumVisibleTimeRange(currMSWidth);
+        timeline.minimumVisibleTimeRange = getMinimumVisibleTimeRange(currMSWidth);
 
         let linePosX = startPosition[0];
         let i = 0;
         let currDatePos;
-        ({ [minimumVisibleTimeRange.name]: currDatePos } = getCurrDatePos(currMSWidth, linePosX));
-        const itsBeginning = currDatePos.value === currDatePos.min;
+        ({ [timeline.minimumVisibleTimeRange.name]: currDatePos } = getCurrDatePos(currMSWidth, linePosX));
 
         const height = 15;
         const maxWidth = 60;
@@ -468,7 +468,7 @@ const GanttChart = ({ records }) => {
 
         while (true && i < 1000) {
           i++;
-          ({ [minimumVisibleTimeRange.name]: currDatePos } = getCurrDatePos(currMSWidth, linePosX));
+          ({ [timeline.minimumVisibleTimeRange.name]: currDatePos } = getCurrDatePos(currMSWidth, linePosX));
 
           linePosX = currDatePos.begin;
           if (linePosX < camEdgePos.l)
@@ -562,7 +562,7 @@ const GanttChart = ({ records }) => {
 
         }
         if (i >= 500)
-          log({ i, minV: minimumVisibleTimeRange.name, msW: currMSWidth });
+          log({ i, minV: timeline.minimumVisibleTimeRange.name, msW: currMSWidth });
         if (textColorAlpha > 0) {
           ctx.font = `${smallFontSize}px Segoe UI`;
           const textWidth = ctx.measureText(currDatePos.shortText).width;
@@ -608,6 +608,7 @@ const GanttChart = ({ records }) => {
 
     // Timeline > cursor
     const timelineCursor = scene.createObject(EmptyObject, {
+      cursorTime: new Date(NOW),
       update(dt) {
         const camPos = this.scene.camera.getPositionOnScene();
         const mousePos = this.scene.mouse.getPositionOnScene();
@@ -615,6 +616,7 @@ const GanttChart = ({ records }) => {
           mousePos[0],
           camPos[1],
         ];
+        this.cursorTime = new Date(NOW + this.transform.position[0] / timeline.currMSWidth);
       }
     }, {
       tag: 'timeline-cursor',
@@ -641,16 +643,21 @@ const GanttChart = ({ records }) => {
     });
 
     const timelineCursorPoly = timelineCursor.createObject(Ploygon, {
-      backgroundColor: '#1d6bd5',
-      // backgroundColor: 'red',
+      borderColor: '#1d6bd5',
+      lineWidth: 2,
+      backgroundColor: 'rgba(29, 107, 213, .9)',
+      shadow: {
+        color: 'rgba(29, 107, 213, .7)',
+        blur: 100,
+      },
       vertices: [
         [0, 0],
-        [20, -10],
-        [20, -20],
-        [-20, -20],
-        [-20, -10],
+        [35, -5],
+        [35, -20],
+        [-35, -20],
+        [-35, -5],
       ],
-      size: [40, 20],
+      size: [70, 20],
       update(dt) {
         const camSize = this.scene.camera.getSize();
         this.transform.position[1] = -camSize[1] / 2 + TIMELINE_HEIGHT;
@@ -661,16 +668,47 @@ const GanttChart = ({ records }) => {
 
     timelineCursorPoly.createObject(Text, {
       color: 'white',
-      size: 10,
-      // text: '12:34:56\n2024-03-07',
-      text: '12:34:56',
+      size: 12,
+      text: '',
       textAlign: 'center',
-      multiline: true,
+      weight: 400,      
       update(dt) {
         this.transform.position = [
           0,
           -this.parent.size[1] / 2 - 7,
         ];
+        const { cursorTime } = this.parent.parent;
+        const year = cursorTime.getFullYear();
+        const month = (cursorTime.getMonth() + 1).toString().padStart(2, '0');
+        const day = cursorTime.getDate().toString().padStart(2, '0');
+        const hour = cursorTime.getHours().toString().padStart(2, '0');
+        const min = cursorTime.getMinutes().toString().padStart(2, '0');
+        const sec = cursorTime.getSeconds().toString().padStart(2, '0');
+        const ms = cursorTime.getMilliseconds().toString().padStart(3, '0');
+        // eslint-disable-next-line default-case
+        switch(timeline.minimumVisibleTimeRange.name) {
+          case 'ms':
+            this.text = `${ms} ms`;
+            break;
+          case 'sec':
+            this.text = `${sec}.${ms} ms`;
+            break;
+          case 'min':
+            this.text = `${hour}:${min}:${sec}`;
+            break;
+          case 'hour':
+            this.text = `${hour}:${min}:${sec}`;
+            break;
+          case 'day':
+            this.text = `${year}-${month}-${day}`;
+            break;
+          case 'month':
+            this.text = `${year}-${month}`;
+            break;
+          case 'year':
+            this.text = `${year}`;
+            break;
+        }
       },
     }, {
       tag: 'timeline-cursor-line',
