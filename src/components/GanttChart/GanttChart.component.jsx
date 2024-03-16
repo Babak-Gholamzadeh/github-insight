@@ -625,9 +625,6 @@ const GanttChart = ({ records }) => {
           }
 
         }
-        if (i >= 500)
-          log({ i, minV: timeline.minimumVisibleTimeRange.name, msW: currMSWidth });
-
 
         if (currDatePos.higherDate) {
           const hAlpha = Math.min(currDatePos.higherDate.fullWidth / camSize[0], 1) * MAX_BG_HIGHLIGHT_OP;
@@ -1002,6 +999,43 @@ const GanttChart = ({ records }) => {
       }
     }, {
       tag: 'zoom-area-start-time-txt',
+    });
+
+    zoomArea.createObject(Text, {
+      color: 'rgba(255, 255, 255, .3)',
+      size: 15,
+      text: '',
+      weight: 400,
+      update(dt) {
+        const { cursorStartTime } = this.parent;
+        const { cursorTime: cursorEndTime } = timelineCursor;
+        const areaDuration = Math.abs(cursorEndTime.getTime() - cursorStartTime.getTime());
+
+        if (areaDuration < 60 * 1000) {
+          if (areaDuration < 1000) {
+            this.text = `${areaDuration} ms`;
+          } else {
+            this.text = `${Math.floor(areaDuration / 1000)} sec`;
+          }
+        } else {
+          this.text = getReadableTimePeriod(areaDuration);
+        }
+
+        this.textAlign = -Math.sign(this.parent.size[0]) > 0 ? 'right' : 'left';
+
+        this.maxWidth = Math.abs(this.parent.size[0]) - 20;
+        if (this.maxWidth < 300) {
+          const alpha = this.maxWidth / 400 * .3;
+          this.color = `rgba(255, 255, 255, ${alpha})`;
+        }
+
+        this.transform.position = [
+          -this.parent.size[0] * .9,
+          10,
+        ];
+      }
+    }, {
+      tag: 'zoom-area-duration-time-txt',
     });
 
     // Tracks
