@@ -266,8 +266,8 @@ const PullRequests = () => {
   return (
     <div className="pull-requests">
       <h3 className='section-title'>Long-running Pull Requests</h3>
-      <GanttChart records={allSortedRecordsByCA} />
       <BarChart records={allSortedRecordsByLR} />
+      <GanttChart records={allSortedRecordsByCA} />
       <PullRequestList records={paginatedRecords} />
       <ListPagination pagination={pagination} changePage={changePage} />
     </div>

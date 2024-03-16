@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from 'react';
 import {
   log,
   getHumanReadableTimeAgo,
-  getReadableTimePeriodShorter,
   getReadableTimePeriod,
 } from '../../utils';
 import {
@@ -15,7 +14,7 @@ import {
   Rect,
   RectImage,
   Text,
-} from './engine';
+} from '../../utils/canvas-engine';
 import draftPullRequestIcon from '../../assets/images/git-pull-request-draft-svgrepo-com.svg';
 import openPullRequestIcon from '../../assets/images/git-pull-request-open-svgrepo-com.svg';
 import mergedPullRequestIcon from '../../assets/images/git-merge-svgrepo-com.svg';
