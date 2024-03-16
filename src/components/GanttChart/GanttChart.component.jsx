@@ -846,10 +846,12 @@ const GanttChart = ({ records }) => {
           if (mouse.isBtnUp('left')) {
             const startPoint = Math.min(this.startDragPos[0], this.endDragPos[0]);
             const endPoint = Math.max(this.startDragPos[0], this.endDragPos[0]);
-            const newCamSizeW = startPoint - endPoint;
-            const changeScale = camSize[0] / Math.abs(newCamSizeW);
-            timeline.currMSWidth *= changeScale;
-            camera.transform.position[0] = (startPoint * changeScale) + (camSize[0] / 2);
+            const zoomAreaW = startPoint - endPoint;
+            const midPoint = endPoint + (zoomAreaW / 2);
+            const midPointMS = -midPoint / timeline.currMSWidth;
+            const changeScale = camSize[0] / Math.abs(zoomAreaW);
+            timeline.currMSWidth = Math.min(timeline.currMSWidth * changeScale, MAX_MS_WIDTH);
+            camera.transform.position[0] = -midPointMS * timeline.currMSWidth;
           }
           this.startDragPos = null;
           camera.enable = true;
