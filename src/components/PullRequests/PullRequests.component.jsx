@@ -200,7 +200,7 @@ const PullRequestList = ({ records }) => {
 };
 
 const auth = {
-  organization: 'microsoft',
+  organization: 'nodejs',
   token: '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',
 };
 
@@ -222,7 +222,7 @@ const PullRequests = () => {
 
   const fetchData = async () => {
     // console.time('fetchAllPullRequests');
-    await fetchAllPullRequests(auth, 'terminal', updatePageData);
+    await fetchAllPullRequests(auth, 'Release', updatePageData);
     // console.timeEnd('fetchAllPullRequests');
   };
   useEffect(() => {

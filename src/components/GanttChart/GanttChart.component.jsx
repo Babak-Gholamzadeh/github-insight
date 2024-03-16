@@ -119,8 +119,12 @@ const GanttChart = ({ records }) => {
       dragPos: null,
       mostLeftPositionX: -(NOW * INIT_MS_WIDTH - (viewport.size[0] / 2)),
       update(dt) {
-        const mouse = this.scene.mouse;
-        if (!this.dragPos && mouse.isBtnDown('left')) {
+        const { mouse, keyboard } = this.scene;
+        if (!this.dragPos &&
+          mouse.isBtnDown('left') &&
+          !keyboard.isKeyDown('shift') &&
+          !keyboard.isKeyDown('alt')
+        ) {
           const mousePos = mouse.getPositionOnViewport();
           this.dragPos = mousePos;
         }
@@ -811,6 +815,84 @@ const GanttChart = ({ records }) => {
       tag: 'timeline-cursor-line',
     });
 
+    // Select Area to zoom
+    const zoomArea = scene.createObject(Rect, {
+      startDragPos: null,
+      endDragPos: null,
+      visible: false,
+      size: [0, 0],
+      backgroundColor: [
+        `rgba(255, 220, 86, .1)`,
+        `rgba(29, 107, 213, .1)`,
+      ],
+      update(dt) {
+        const { camera } = this.scene;
+        const camEdgePos = camera.getEdgePositionsOnScene();
+        const camSize = camera.getSize();
+        const { mouse, keyboard } = this.scene;
+        this.size = camSize;
+
+        if (!camera.dragPos &&
+          !this.startDragPos &&
+          mouse.isBtnDown('left') &&
+          keyboard.isKeyDown('shift')
+        ) {
+          camera.enable = false;
+          this.startDragPos = mouse.getPositionOnScene();
+          log({ zoomArea: this.startDragPos });
+        }
+
+        if (this.startDragPos && (mouse.isBtnUp('left') || keyboard.isKeyDown('escape'))) {
+          if (mouse.isBtnUp('left')) {
+            const startPoint = Math.min(this.startDragPos[0], this.endDragPos[0]);
+            const endPoint = Math.max(this.startDragPos[0], this.endDragPos[0]);
+            const newCamSizeW = startPoint - endPoint;
+            const changeScale = camSize[0] / Math.abs(newCamSizeW);
+            timeline.currMSWidth *= changeScale;
+            camera.transform.position[0] = (startPoint * changeScale) + (camSize[0] / 2);
+          }
+          this.startDragPos = null;
+          camera.enable = true;
+        }
+
+        if (this.startDragPos) {
+          this.endDragPos = mouse.getPositionOnScene();
+
+          this.visible = true;
+          this.transform.position = [
+            this.startDragPos[0],
+            camEdgePos.b,
+          ];
+          this.size = [
+            this.startDragPos[0] - this.endDragPos[0],
+            camSize[1],
+          ];
+        } else {
+          this.visible = false;
+        }
+      }
+    }, {
+      tag: 'zoom-area',
+      renderOrder: 20,
+    });
+
+    zoomArea.createObject(Line, {
+      color: `rgba(255, 220, 86, .7)`,
+      lineWidth: .7,
+      shadow: {
+        // color: 'black',
+        blur: 10,
+      },
+      update(dt) {
+        this.vertices = [
+          [0, 0],
+          [0, this.parent.size[1]],
+        ];
+      }
+    }, {
+      tag: 'zoom-area-start-line',
+    });
+
     // Tracks
     const tracks = scene.createObject(EmptyObject, {
       trackHeight: 40,
@@ -1084,7 +1166,7 @@ const GanttChart = ({ records }) => {
                 this.size;
               this.transform.position = [x, y];
               const stuffSizeInToolTip = (pr.toolTip.paddingSide * 2) + prTooltipIcon.size[0] + prTooltipIcon.marginRight + prTooltipRepoTitle.marginRight;
-              log({ acutalWith: this.acutalWith, prToolW: pr.toolTip.size[0], prS: stuffSizeInToolTip });
+              // log({ acutalWith: this.acutalWith, prToolW: pr.toolTip.size[0], prS: stuffSizeInToolTip });
               if (this.acutalWith > pr.toolTip.size[0] - stuffSizeInToolTip)
                 pr.toolTip.size[0] = this.acutalWith + stuffSizeInToolTip;
             }

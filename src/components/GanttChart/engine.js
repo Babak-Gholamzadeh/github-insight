@@ -310,14 +310,23 @@ export class Camera extends EngineEntity {
   } = {}) {
     const posOnViewport = this.convertPosScene2Viewport(position);
     const sizeOnViewport = size.map(v => -v);
-    this.ctx.fillStyle = backgroundColor;
-    this.ctx.strokeStyle = borderColor;
+
     this.ctx.beginPath();
     this.ctx.roundRect(
       ...posOnViewport,
       ...sizeOnViewport,
       radius,
     );
+    if (Array.isArray(backgroundColor)) {
+      const gradientBackgroundColor = this.ctx.createLinearGradient(0, 0, sizeOnViewport[0], 0);
+      for (let i = 0; i <= 1; i += 1 / (backgroundColor.length - 1)) {
+        gradientBackgroundColor.addColorStop(i, backgroundColor[i]);
+      }
+      this.ctx.fillStyle = gradientBackgroundColor;
+    } else {
+      this.ctx.fillStyle = backgroundColor;
+      this.ctx.strokeStyle = borderColor;
+    }
     this.ctx.stroke();
     this.ctx.fill();
   }
