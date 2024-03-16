@@ -825,6 +825,7 @@ const GanttChart = ({ records }) => {
         `rgba(255, 220, 86, .1)`,
         `rgba(29, 107, 213, .1)`,
       ],
+      cursorStartTime: timelineCursor.cursorTime,
       update(dt) {
         const { camera } = this.scene;
         const camEdgePos = camera.getEdgePositionsOnScene();
@@ -839,7 +840,8 @@ const GanttChart = ({ records }) => {
         ) {
           camera.enable = false;
           this.startDragPos = mouse.getPositionOnScene();
-          log({ zoomArea: this.startDragPos });
+          this.cursorStartTime = timelineCursor.cursorTime;
+          // log({ zoomArea: this.startDragPos });
         }
 
         if (this.startDragPos && (mouse.isBtnUp('left') || keyboard.isKeyDown('escape'))) {
@@ -893,6 +895,113 @@ const GanttChart = ({ records }) => {
       }
     }, {
       tag: 'zoom-area-start-line',
+    });
+
+    const zoomAreaStartTime = zoomArea.createObject(Rect, {
+      backgroundColor: `rgba(255, 220, 86, .7)`,
+      size: [0, 20],
+      visible: false,
+      sideToShow: -1,
+      displayAnimCompleted: false,
+      update(dt) {
+        const { startDragPos, endDragPos } = this.parent;
+        if (!startDragPos) {
+          this.hide();
+          return;
+        };
+
+        const diffX = startDragPos[0] - endDragPos[0];
+        if (Math.abs(diffX) < 5) {
+          this.hide();
+          return;
+        };
+
+        if (diffX < 0) {
+          this.sideToShow = -1;
+        } else {
+          this.sideToShow = 1;
+        }
+
+        this.show(dt, .1);
+      },
+      hide() {
+        this.visible = false;
+        this.size[0] = 0;
+        this.displayAnimCompleted = false;
+      },
+      show(dt, duration = 1) {
+        if (this.displayAnimCompleted) return;
+        if (!this.visible) this.visible = true;
+
+        this.size[0] += 70 * (dt / duration);
+        if (this.size[0] >= 70) {
+          this.size[0] = 70;
+          this.displayAnimCompleted = true;
+        }
+        if (this.sideToShow === -1) {
+          this.transform.position[0] = 0;
+        } else if (this.sideToShow === 1) {
+          this.transform.position[0] = this.size[0];
+        }
+      }
+    }, {
+      tag: 'zoom-area-start-time',
+    });
+
+    zoomAreaStartTime.createObject(Text, {
+      color: 'white',
+      size: 12,
+      text: '',
+      textAlign: 'center',
+      weight: 400,
+      visible: false,
+      update(dt) {
+        if (!this.parent.displayAnimCompleted) {
+          this.visible = false;
+          return;
+        };
+
+        this.visible = true;
+
+        this.transform.position = [
+          -this.parent.size[0] / 2,
+          this.parent.size[1] / 2 - this.size / 2,
+        ];
+        const { cursorStartTime } = this.parent.parent;
+        const year = cursorStartTime.getFullYear();
+        const month = (cursorStartTime.getMonth() + 1).toString().padStart(2, '0');
+        const day = cursorStartTime.getDate().toString().padStart(2, '0');
+        const hour = cursorStartTime.getHours().toString().padStart(2, '0');
+        const min = cursorStartTime.getMinutes().toString().padStart(2, '0');
+        const sec = cursorStartTime.getSeconds().toString().padStart(2, '0');
+        const ms = cursorStartTime.getMilliseconds().toString().padStart(3, '0');
+        // eslint-disable-next-line default-case
+        switch (timeline.minimumVisibleTimeRange?.name) {
+          case 'ms':
+            this.text = `${ms} ms`;
+            break;
+          case 'sec':
+            this.text = `${sec}.${ms} ms`;
+            break;
+          case 'min':
+            this.text = `${hour}:${min}:${sec}`;
+            break;
+          case 'hour':
+            this.text = `${hour}:${min}:${sec}`;
+            break;
+          case 'day':
+            this.text = `${year}-${month}-${day}`;
+            break;
+          case 'month':
+            this.text = `${year}-${month}`;
+            break;
+          case 'year':
+            this.text = `${year}`;
+            break;
+        }
+      }
+    }, {
+      tag: 'zoom-area-start-time-txt',
     });
 
     // Tracks
