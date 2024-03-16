@@ -24,10 +24,10 @@ import closedPullRequestIcon from '../../assets/images/git-pull-request-closed-s
 import './GanttChart.style.scss';
 
 const PR_STATE_COLORS = {
-  open: [63, 186, 80, 1],
-  draft: [133, 141, 151, 1],
-  merged: [163, 113, 247, 1],
-  closed: [248, 81, 73, 1],
+  open: [63, 186, 80, .9],
+  draft: [133, 141, 151, .9],
+  merged: [163, 113, 247, .9],
+  closed: [248, 81, 73, .9],
 };
 
 const PR_STATE_ICONS = {

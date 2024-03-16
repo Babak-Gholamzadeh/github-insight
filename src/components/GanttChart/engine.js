@@ -318,7 +318,11 @@ export class Camera extends EngineEntity {
       radius,
     );
     if (Array.isArray(backgroundColor)) {
-      const gradientBackgroundColor = this.ctx.createLinearGradient(0, 0, sizeOnViewport[0], 0);
+      const gradientBackgroundColor = this.ctx.createLinearGradient(
+        sizeOnViewport[0] < 0 ? -sizeOnViewport[0] : 0,
+        0,
+        sizeOnViewport[0] > 0 ? sizeOnViewport[0] : 0,
+        0);
       for (let i = 0; i <= 1; i += 1 / (backgroundColor.length - 1)) {
         gradientBackgroundColor.addColorStop(i, backgroundColor[i]);
       }
