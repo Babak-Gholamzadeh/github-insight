@@ -304,6 +304,7 @@ export class Camera extends EngineEntity {
   renderRoundRect({
     backgroundColor,
     borderColor = backgroundColor,
+    lineWidth = 1,
     position = [0, 0],
     size = [0, 0],
     radius = 0,
@@ -329,6 +330,7 @@ export class Camera extends EngineEntity {
       this.ctx.fillStyle = gradientBackgroundColor;
     } else {
       this.ctx.fillStyle = backgroundColor;
+      this.ctx.lineWidth = lineWidth;
       this.ctx.strokeStyle = borderColor;
     }
     this.ctx.stroke();
@@ -551,6 +553,7 @@ export class Rect extends EmptyObject {
     this.scene.camera.renderRoundRect({
       backgroundColor: this.backgroundColor,
       borderColor: this.borderColor,
+      lineWidth: this.lineWidth,
       position,
       size,
       radius: this.radius,

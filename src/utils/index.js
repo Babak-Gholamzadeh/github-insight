@@ -99,3 +99,10 @@ export const getHumanReadableTimeAgo = dateString => {
     return 'just now';
   }
 };
+
+const factor = 1e15;
+export const createPrecisionErrHandler = smallestValue => r => {
+  return parseInt(r, 10) + 1 - r < smallestValue ?
+    Math.ceil(r) :
+    Math.round(r * factor) / factor;
+};

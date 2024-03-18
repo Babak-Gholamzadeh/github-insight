@@ -4,6 +4,7 @@ import {
   log,
   getHumanReadableTimeAgo,
   getReadableTimePeriod,
+  createPrecisionErrHandler,
 } from '../../utils';
 import {
   Engine,
@@ -70,6 +71,7 @@ const BarChart = ({ records }) => {
   const refCamera = useRef();
   const refKeyboard = useRef();
   const refMouse = useRef();
+  const refTimeline = useRef();
 
   const [viewport, setViewport] = useState({ size: [0, 0] });
   const [ctx, setCtx] = useState();
@@ -108,6 +110,8 @@ const BarChart = ({ records }) => {
     log({ uf: `[ctx, viewport]: ${ctx}, ${viewport}` });
     if (!ctx) return;
     const scene = refScene.current;
+    const TIMELINE_WIDTH = 60;
+    const INIT_MS_HEIGHT = .0000005;
     // Camera
     const camera = refCamera.current = scene.createCamera({
       ctx, viewport,
@@ -134,7 +138,7 @@ const BarChart = ({ records }) => {
           const camSize = this.getSize();
           this.transform.position[0] = Math.min(
             this.transform.position[0] - diffX,
-            -camSize[0] / 2,
+            -camSize[0] / 2 + TIMELINE_WIDTH,
           );
           this.transform.position[1] = Math.max(
             this.transform.position[1] + diffY,
@@ -145,7 +149,7 @@ const BarChart = ({ records }) => {
       },
     }, {
       position: [
-        -viewport.size[0] / 2,
+        -viewport.size[0] / 2 + TIMELINE_WIDTH,
         viewport.size[1] / 2,
       ],
       renderOrder: 10,
@@ -180,7 +184,530 @@ const BarChart = ({ records }) => {
       ],
     });
 
-    // Do everything here...
+    // Timeline
+    const MAX_MS_HEIGHT = 60;
+    const MIN_MS_HEIGHT = 0.0000000015;
+    const timeline = refTimeline.current = camera.createObject(EmptyObject, {
+      currMSHeight: INIT_MS_HEIGHT,
+      minimumVisibleTimeRange: null,
+      size: [
+        TIMELINE_WIDTH,
+        camera.getSize()[1],
+      ],
+      update(dt) {
+        const { mouse, keyboard, camera } = this.scene;
+        const { scrollDelta } = mouse;
+        if (keyboard.isKeyDown('shift') && scrollDelta) {
+          const changeScale = scrollDelta * .1;
+          if (
+            (changeScale > 0 && this.currMSHeight < MAX_MS_HEIGHT) ||
+            (changeScale < 0 && this.currMSHeight > MIN_MS_HEIGHT)
+          ) {
+            this.currMSHeight = Math.max(Math.min(this.currMSHeight + this.currMSHeight * changeScale, MAX_MS_HEIGHT), MIN_MS_HEIGHT);
+            const mousePos = mouse.getPositionOnScene();
+            const CAMERA_LOWEST_BOTTOM = viewport.size[1] / 2;
+            camera.transform.position[1] = Math.max(
+              camera.transform.position[1] + mousePos[1] * changeScale,
+              CAMERA_LOWEST_BOTTOM,
+            );
+          }
+        }
+      },
+    }, {
+      tag: 'timeline',
+      position: [
+        camera.getSize()[0] / 2,
+        -camera.getSize()[1] / 2,
+      ],
+    });
+
+    // Timeline > background
+    timeline.createObject(Rect, {
+      // backgroundColor: '#faa',
+      backgroundColor: 'rgba(0, 0, 0, .3)',
+      update(dt) {
+        this.size = this.parent.size;
+      }
+    }, {
+      tag: 'timeline-box',
+    });
+
+    const getCurrDurationPos = (msHeight, posY) => {
+      const handlePrecisionErr = createPrecisionErrHandler(msHeight);
+
+      const secHeight = handlePrecisionErr(msHeight * 1000);
+      const minHeight = handlePrecisionErr(msHeight * 1000 * 60);
+      const hourHeight = handlePrecisionErr(msHeight * 1000 * 60 * 60);
+      const dayHeight = handlePrecisionErr(msHeight * 1000 * 60 * 60 * 24);
+      const monthHeight = handlePrecisionErr(msHeight * 1000 * 60 * 60 * 24 * 30);
+      const yearHeight = handlePrecisionErr(msHeight * 1000 * 60 * 60 * 24 * 30 * 12);
+
+      const passedMSs = Math.floor(handlePrecisionErr(posY / msHeight));
+      const passedSecs = Math.floor(handlePrecisionErr(posY / secHeight));
+      const passedMins = Math.floor(handlePrecisionErr(posY / minHeight));
+      const passedHours = Math.floor(handlePrecisionErr(posY / hourHeight));
+      const passedDays = Math.floor(handlePrecisionErr(posY / dayHeight));
+      const passedMonths = Math.floor(handlePrecisionErr(posY / monthHeight));
+      const passedYears = Math.floor(handlePrecisionErr(posY / yearHeight));
+
+      const ms = {
+        value: passedMSs % 1000,
+        min: 0,
+        max: 999,
+        topHandHeight: msHeight,
+        fullHeight: msHeight,
+        get begin() {
+          return handlePrecisionErr(posY + this.topHandHeight);
+        },
+        end: posY,
+        unit: 'ms',
+        get fullText() {
+          return this.value.toString() + this.unit;
+        },
+        get shortText() {
+          return this.value.toString();
+        },
+      };
+
+      const sec = {
+        value: passedSecs % 60,
+        min: 0,
+        max: 59,
+        fullHeight: secHeight,
+        get topHandHeight() {
+          return handlePrecisionErr((ms.max - ms.value) * ms.fullHeight + ms.topHandHeight);
+        },
+        get begin() {
+          return handlePrecisionErr(posY + this.topHandHeight);
+        },
+        get end() {
+          return handlePrecisionErr(posY - (this.fullHeight - this.topHandHeight));
+        },
+        unit: 's',
+        get fullText() {
+          return this.value.toString() + this.unit;
+        },
+        get shortText() {
+          return this.value.toString();
+        },
+      };
+
+      const min = {
+        value: passedMins % 60,
+        min: 0,
+        max: 59,
+        fullHeight: handlePrecisionErr(sec.fullHeight * 60),
+        get topHandHeight() {
+          return handlePrecisionErr((sec.max - sec.value) * sec.fullHeight + sec.topHandHeight);
+        },
+        get begin() {
+          return handlePrecisionErr(posY + this.topHandHeight);
+        },
+        get end() {
+          return handlePrecisionErr(posY - (this.fullHeight - this.topHandHeight));
+        },
+        unit: 'm',
+        get fullText() {
+          return this.value.toString() + this.unit;
+        },
+        get shortText() {
+          return this.value.toString();
+        },
+      };
+
+      const hour = {
+        value: passedHours % 24,
+        min: 0,
+        max: 23,
+        fullHeight: handlePrecisionErr(min.fullHeight * 60),
+        get topHandHeight() {
+          return handlePrecisionErr((min.max - min.value) * min.fullHeight + min.topHandHeight);
+        },
+        get begin() {
+          return handlePrecisionErr(posY + this.topHandHeight);
+        },
+        get end() {
+          return handlePrecisionErr(posY - (this.fullHeight - this.topHandHeight));
+        },
+        unit: 'h',
+        get fullText() {
+          return this.value.toString() + this.unit;
+        },
+        get shortText() {
+          return this.value.toString();
+        },
+      };
+
+      const day = {
+        value: passedDays % 30,
+        min: 0,
+        max: 29,
+        fullHeight: hour.fullHeight * 24,
+        get topHandHeight() {
+          return handlePrecisionErr((hour.max - hour.value) * hour.fullHeight + hour.topHandHeight);
+        },
+        get begin() {
+          return handlePrecisionErr(posY + this.topHandHeight);
+        },
+        get end() {
+          return handlePrecisionErr(posY - (this.fullHeight - this.topHandHeight));
+        },
+        unit: 'd',
+        get fullText() {
+          return this.value.toString() + this.unit;
+        },
+        get shortText() {
+          return this.value.toString();
+        },
+      };
+
+      const month = {
+        value: passedMonths % 12,
+        min: 0,
+        max: 11,
+        fullHeight: day.fullHeight * 30,
+        get topHandHeight() {
+          return handlePrecisionErr((day.max - day.value) * day.fullHeight + day.topHandHeight);
+        },
+        get begin() {
+          return handlePrecisionErr(posY + this.topHandHeight);
+        },
+        get end() {
+          return handlePrecisionErr(posY - (this.fullHeight - this.topHandHeight));
+        },
+        unit: 'm',
+        get fullText() {
+          return this.value.toString() + this.unit;
+        },
+        get shortText() {
+          return this.value.toString();
+        },
+      };
+
+      const year = {
+        value: passedYears,
+        min: 0,
+        max: 10000,
+        fullHeight: month.fullHeight * 12,
+        get topHandHeight() {
+          return handlePrecisionErr((month.max - month.value) * month.fullHeight + month.topHandHeight);
+        },
+        get begin() {
+          return handlePrecisionErr(posY + this.topHandHeight);
+        },
+        get end() {
+          return handlePrecisionErr(posY - (this.fullHeight - this.topHandHeight));
+        },
+        unit: 'y',
+        get fullText() {
+          return this.value.toString() + this.unit;
+        },
+        get shortText() {
+          return this.value.toString();
+        },
+      };
+
+      {
+        ms.lowerDate = null;
+        ms.higherDate = sec;
+        sec.lowerDate = ms;
+        sec.higherDate = min;
+        min.lowerDate = sec;
+        min.higherDate = hour;
+        hour.lowerDate = min;
+        hour.higherDate = day;
+        day.lowerDate = hour;
+        day.higherDate = month;
+        month.lowerDate = day;
+        month.higherDate = year;
+        year.lowerDate = month;
+        year.higherDate = null;
+      }
+
+      return {
+        ms,
+        sec,
+        min,
+        hour,
+        day,
+        month,
+        year,
+      };
+    };
+
+    const MIN_VISIBLE_HEIGHT = 2;
+
+    const getMinimumVisibleTimeRange = msHeight => {
+      const secHeight = msHeight * 1000;
+      const minHeight = secHeight * 60;
+      const hourHeight = minHeight * 60;
+      const dayHeight = hourHeight * 24;
+      const monthHeight = dayHeight * 30;
+      const yearHeight = monthHeight * 12;
+      if (msHeight >= MIN_VISIBLE_HEIGHT)
+        return { height: msHeight, name: 'ms' };
+      if (secHeight >= MIN_VISIBLE_HEIGHT)
+        return { height: secHeight, name: 'sec' };
+      if (minHeight >= MIN_VISIBLE_HEIGHT)
+        return { height: minHeight, name: 'min' };
+      if (hourHeight >= MIN_VISIBLE_HEIGHT)
+        return { height: hourHeight, name: 'hour' };
+      if (dayHeight >= MIN_VISIBLE_HEIGHT)
+        return { height: dayHeight, name: 'day' };
+      if (monthHeight >= MIN_VISIBLE_HEIGHT)
+        return { height: monthHeight, name: 'month' };
+      // if (yearHeight >= MIN_VISIBLE_HEIGHT)
+      return { height: yearHeight, name: 'year' };
+    };
+
+    // Timeline > shortlines
+    timeline.createObject(EmptyObject, {
+      size: [0, 0],
+      update(dt) {
+        this.size = this.parent.size;
+      },
+      render() {
+        const { currMSHeight } = this.parent;
+        const camEdgePos = this.scene.camera.getEdgePositionsOnScene();
+        const camSize = this.scene.camera.getSize();
+        const startPosition = this.getPositionOnScene();
+
+        timeline.minimumVisibleTimeRange = getMinimumVisibleTimeRange(currMSHeight);
+
+        let linePosY = startPosition[1];
+        let i = 0;
+        let currDurationPos;
+        ({ [timeline.minimumVisibleTimeRange.name]: currDurationPos } = getCurrDurationPos(currMSHeight, linePosY));
+
+        const width = 15;
+        const maxHeight = 60;
+        const currHeight = currDurationPos.fullHeight;
+        let textColorAlpha = 1;
+        let lineLength = width;
+        let lineWidth = 1;
+        let smallFontSize = 11;
+        let largeFontSize = 16;
+        let currDateXOffset = width;
+        let higherDateXOffset = 0;
+        // const MAX_BG_HIGHLIGHT_OP = .05;
+        log({ currMSHeight });
+
+
+        const itsEnding = currDurationPos.value === currDurationPos.max;
+        textColorAlpha = 1;
+        lineLength = width;
+        lineWidth = 1;
+        smallFontSize = 11;
+        largeFontSize = 16;
+        currDateXOffset = width;
+        higherDateXOffset = 0;
+        if (currHeight < maxHeight) {
+          smallFontSize = Math.max((currHeight + 20) / (maxHeight + 20) * 11, 8);
+          textColorAlpha = (currHeight - 10) / (maxHeight - 10);
+          lineLength = (currHeight) / (maxHeight) * width;
+          currDateXOffset = (currHeight + 10) / (maxHeight + 10) * width;
+          lineWidth = (currHeight - 0) / maxHeight;
+          higherDateXOffset = (1 - currHeight / maxHeight) * 22;
+          largeFontSize = (currHeight / maxHeight) * 4 + 12;
+          if (itsEnding) {
+            lineLength += (width - lineLength);
+            lineWidth = 1;
+          }
+        }
+
+        // higherDate text
+        if (
+          (currDurationPos.value > currDurationPos.min ||
+            currDurationPos.begin < camEdgePos.b) &&
+          currDurationPos.higherDate
+        ) {
+          const nearTop = Math.min(currDurationPos.higherDate.begin - (largeFontSize / 2), camEdgePos.t);
+          const nearBottom = Math.max(currDurationPos.higherDate.end, camEdgePos.b - largeFontSize);
+          const closestDistance = nearTop - nearBottom;
+          const textPositionY = nearBottom + closestDistance / 2;
+          const textPositionX = startPosition[0] - this.size[0] + (width * 2) - higherDateXOffset + 10;
+          log({ firstHigherText: true, nearBottom, nearTop, closestDistance });
+          this.scene.camera.renderText({
+            text: currDurationPos.higherDate.fullText,
+            color: 'white',
+            size: largeFontSize,
+            textAlign: 'center',
+            position: [
+              textPositionX,
+              textPositionY,
+            ],
+          });
+        }
+
+        while (true && i < 1000) {
+          i++;
+          ({ [timeline.minimumVisibleTimeRange.name]: currDurationPos } = getCurrDurationPos(currMSHeight, linePosY));
+
+          linePosY = currDurationPos.begin;
+          if (linePosY > camEdgePos.t)
+            break;
+
+          const linePosition = [
+            startPosition[0] - this.size[0],
+            linePosY,
+          ];
+
+          const itsBeginning = currDurationPos.value === currDurationPos.min;
+          const itsEnding = currDurationPos.value === currDurationPos.max;
+
+          // BG Highlight
+          // if (currDatePos.higherDate && itsBeginning) {
+          //   const hAlpha = Math.min(currDatePos.higherDate.fullWidth / camSize[0], 1) * MAX_BG_HIGHLIGHT_OP;
+          //   const BG_COLORS = BG_HIGHLIGHT_COLORS(hAlpha);
+          //   this.scene.camera.renderRoundRect({
+          //     backgroundColor: BG_COLORS[currDatePos.higherDate.value % BG_COLORS.length],
+          //     position: [
+          //       currDatePos.higherDate.begin,
+          //       camEdgePos.b,
+          //     ],
+          //     size: [
+          //       -currDatePos.higherDate.fullWidth,
+          //       camSize[1],
+          //     ],
+          //   });
+
+          //   if (currDatePos.higherDate.higherDate) {
+          //     const hhAlpha = MAX_BG_HIGHLIGHT_OP - hAlpha;
+          //     const itsBeginning = currDatePos.higherDate.value === currDatePos.higherDate.min;
+          //     if (itsBeginning) {
+          //       const BG_COLORS = BG_HIGHLIGHT_COLORS(hhAlpha);
+          //       this.scene.camera.renderRoundRect({
+          //         backgroundColor: BG_COLORS[currDatePos.higherDate.higherDate.value % BG_COLORS.length],
+          //         position: [
+          //           currDatePos.higherDate.higherDate.begin,
+          //           camEdgePos.b,
+          //         ],
+          //         size: [
+          //           -currDatePos.higherDate.higherDate.fullWidth,
+          //           camSize[1],
+          //         ],
+          //       });
+          //     }
+          //   }
+          // }
+
+          if (currHeight < maxHeight) {
+            lineLength = (currHeight) / (maxHeight) * width;
+            lineWidth = (currHeight - 0) / maxHeight;
+            if (itsEnding) {
+              lineLength += (width - lineLength);
+              lineWidth = 1;
+            }
+          }
+
+          if (lineLength > 0) {
+            this.scene.camera.renderLine({
+              position: linePosition,
+              vertices: [
+                [0, 0],
+                [lineLength, 0],
+              ],
+              color: 'white',
+              lineWidth,
+            });
+          }
+
+          // currDate text
+          if (textColorAlpha > 0) {
+            const nearTop = Math.min(currDurationPos.begin - (smallFontSize / 2), camEdgePos.t);
+            const nearBottom = Math.max(currDurationPos.end, camEdgePos.b);
+            const closestDistance = nearTop - nearBottom;
+            const textPositionY = nearBottom + closestDistance / 2;
+            const textPositionX = startPosition[0] - this.size[0] + currDateXOffset;
+            this.scene.camera.renderText({
+              text: currDurationPos.shortText,
+              color: `rgba(255, 255, 255, ${textColorAlpha})`,
+              size: smallFontSize,
+              textAlign: 'center',
+              position: [
+                textPositionX,
+                textPositionY,
+              ],
+            });
+          }
+
+          // higherDate text
+          if (itsBeginning && currDurationPos.higherDate) {
+            const nearTop = Math.min(currDurationPos.higherDate.begin - (largeFontSize / 2), camEdgePos.t);
+            const nearBottom = Math.max(currDurationPos.higherDate.end, camEdgePos.b);
+            const closestDistance = nearTop - nearBottom;
+            const textPositionY = nearBottom + closestDistance / 2;
+            const textPositionX = startPosition[0] - this.size[0] + (width * 2) - higherDateXOffset + 10;
+            this.scene.camera.renderText({
+              text: currDurationPos.higherDate.fullText,
+              color: 'white',
+              size: largeFontSize,
+              textAlign: 'center',
+              position: [
+                textPositionX,
+                textPositionY,
+              ],
+            });
+          }
+
+        }
+
+        // if (currDatePos.higherDate) {
+        //   const hAlpha = Math.min(currDatePos.higherDate.fullWidth / camSize[0], 1) * MAX_BG_HIGHLIGHT_OP;
+        //   const BG_COLORS = BG_HIGHLIGHT_COLORS(hAlpha);
+        //   this.scene.camera.renderRoundRect({
+        //     backgroundColor: BG_COLORS[currDatePos.higherDate.value % BG_COLORS.length],
+        //     position: [
+        //       currDatePos.higherDate.end,
+        //       camEdgePos.b,
+        //     ],
+        //     size: [
+        //       currDatePos.higherDate.fullWidth,
+        //       camSize[1],
+        //     ],
+        //   });
+        //   if (currDatePos.higherDate.higherDate) {
+        //     const hhAlpha = MAX_BG_HIGHLIGHT_OP - hAlpha;
+        //     const itsBeginning = currDatePos.higherDate.value === currDatePos.higherDate.min;
+        //     if (itsBeginning) {
+        //       const BG_COLORS = BG_HIGHLIGHT_COLORS(hhAlpha);
+        //       this.scene.camera.renderRoundRect({
+        //         backgroundColor: BG_COLORS[currDatePos.higherDate.higherDate.value % BG_COLORS.length],
+        //         position: [
+        //           currDatePos.higherDate.higherDate.end,
+        //           camEdgePos.b,
+        //         ],
+        //         size: [
+        //           currDatePos.higherDate.higherDate.fullWidth,
+        //           camSize[1],
+        //         ],
+        //       });
+        //     }
+        //   }
+        // }
+
+        // currDate text
+        if (textColorAlpha > 0) {
+          const nearTop = Math.min(currDurationPos.begin, camEdgePos.t);
+          const nearBottom = Math.max(currDurationPos.end, camEdgePos.b);
+          const closestDistance = nearTop - nearBottom;
+          const textPositionY = nearBottom + closestDistance / 2;
+          const textPositionX = startPosition[0] - this.size[0] + currDateXOffset;
+          this.scene.camera.renderText({
+            text: currDurationPos.shortText,
+            color: `rgba(255, 255, 255, ${textColorAlpha})`,
+            size: smallFontSize,
+            textAlign: 'center',
+            position: [
+              textPositionX,
+              textPositionY,
+            ],
+          });
+        }
+      }
+    }, {
+      tag: 'timeline-short-lines',
+    });
 
     // Tracks
     const tracks = scene.createObject(EmptyObject, {
@@ -190,17 +717,21 @@ const BarChart = ({ records }) => {
       update(dt) {
         const { scrollDelta } = this.scene.mouse;
         const changeScale = scrollDelta * .1;
-        const MAX_WIDTH = this.scene.camera.viewport.size[0];
+        const MAX_WIDTH = this.scene.camera.getSize()[0] - TIMELINE_WIDTH;
         const MIN_WIDTH = .5;
-        if (this.scene.keyboard.isKeyDown('shift') &&
+        const MAX_LINE_WIDTH = 15;
+        if (this.scene.keyboard.isKeyDown('alt') &&
           (
             (changeScale > 0 && this.trackWidth < MAX_WIDTH) ||
             (changeScale < 0 && this.trackWidth > MIN_WIDTH)
           )
         ) {
           log({ changeScale });
-          this.trackWidth = Math.max(Math.min(this.trackWidth + this.trackWidth * changeScale, MAX_WIDTH), MIN_WIDTH);
-          this.trackLineWidth = this.trackWidth / 40;
+          this.trackWidth = Math.max(
+            Math.min(this.trackWidth + this.trackWidth * changeScale, MAX_WIDTH),
+            MIN_WIDTH,
+          );
+          this.trackLineWidth = Math.min(this.trackWidth / 40, MAX_LINE_WIDTH);
         }
       },
       render() {
@@ -209,7 +740,7 @@ const BarChart = ({ records }) => {
         const { camera } = this.scene;
         const camSize = camera.getSize();
         const camEdgePos = camera.getEdgePositionsOnScene();
-        const offsetX = Math.floor(Math.max(camEdgePos.r, 0) / this.trackWidth);
+        const offsetX = Math.floor(Math.min(camEdgePos.r, 0) / this.trackWidth);
         for (let i = offsetX; i > camEdgePos.l; i -= this.trackWidth) {
           camera.renderLine({
             color: '#333',
@@ -230,15 +761,16 @@ const BarChart = ({ records }) => {
       renderOrder: -Infinity,
     });
 
-    
+
     scene.createObject(Rect, {
       backgroundColor: 'yellow',
-      size: [100, 50],
+      borderColor: 'red',
+      lineWidth: 5,
+      size: [100, 100],
     }, {
       tag: 'ref-object',
-      position: [-400, 100],
+      position: [0, 0],
     });
-
   }, [ctx, viewport]);
 
 

@@ -248,11 +248,6 @@ const GanttChart = ({ records }) => {
     const getNumOfDaysPerMonth = (year, month) =>
       new Date(year, month + 1, 0).getDate();
 
-    const getNumOfDaysPerYear = year => Array
-      .from({ length: 12 })
-      .reduce((days, _, month) =>
-        days + getNumOfDaysPerMonth(year, month), 0);
-
     const getCurrDatePos = (msWidth, posX) => {
       const backInTimeMSs = posX / msWidth;
       const date = new Date(NOW + backInTimeMSs);
@@ -442,7 +437,7 @@ const GanttChart = ({ records }) => {
       };
     };
 
-    const minVisibleWidth = 2;
+    const MIN_VISIBLE_WIDTH = 2;
 
     const getMinimumVisibleTimeRange = msWidth => {
       const secWidth = msWidth * 1000;
@@ -451,19 +446,19 @@ const GanttChart = ({ records }) => {
       const dayWidth = hourWidth * 24;
       const monthWidth = dayWidth * 30;
       const yearWidth = monthWidth * 12;
-      if (msWidth >= minVisibleWidth)
+      if (msWidth >= MIN_VISIBLE_WIDTH)
         return { width: msWidth, name: 'ms' };
-      if (secWidth >= minVisibleWidth)
+      if (secWidth >= MIN_VISIBLE_WIDTH)
         return { width: secWidth, name: 'sec' };
-      if (minWidth >= minVisibleWidth)
+      if (minWidth >= MIN_VISIBLE_WIDTH)
         return { width: minWidth, name: 'min' };
-      if (hourWidth >= minVisibleWidth)
+      if (hourWidth >= MIN_VISIBLE_WIDTH)
         return { width: hourWidth, name: 'hour' };
-      if (dayWidth >= minVisibleWidth)
+      if (dayWidth >= MIN_VISIBLE_WIDTH)
         return { width: dayWidth, name: 'day' };
-      if (monthWidth >= minVisibleWidth)
+      if (monthWidth >= MIN_VISIBLE_WIDTH)
         return { width: monthWidth, name: 'month' };
-      // if (yearWidth >= minVisibleWidth)
+      // if (yearWidth >= MIN_VISIBLE_WIDTH)
       return { width: yearWidth, name: 'year' };
     };
 
@@ -488,9 +483,9 @@ const GanttChart = ({ records }) => {
 
         const height = 15;
         const maxWidth = 60;
-        let currWidth = currDatePos.fullWidth;
+        const currWidth = currDatePos.fullWidth;
         let textColorAlpha = 1;
-        let lineHeight = height;
+        let lineLength = height;
         let lineWidth = 1;
         let smallFontSize = 12;
         let largeFontSize = 16;
@@ -549,7 +544,7 @@ const GanttChart = ({ records }) => {
           }
 
           textColorAlpha = 1;
-          lineHeight = height;
+          lineLength = height;
           lineWidth = 1;
           smallFontSize = 12;
           largeFontSize = 16;
@@ -558,23 +553,23 @@ const GanttChart = ({ records }) => {
           if (currWidth < maxWidth) {
             smallFontSize = Math.max((currWidth + 20) / (maxWidth + 20) * 12, 8);
             textColorAlpha = (currWidth - 10) / (maxWidth - 10);
-            lineHeight = (currWidth + 10) / (maxWidth + 10) * height;
+            lineLength = (currWidth + 10) / (maxWidth + 10) * height;
             currDateYOffset = (currWidth + 10) / (maxWidth + 10) * height;
             lineWidth = (currWidth - 0) / maxWidth;
             higherDateYOffset = (1 - currWidth / maxWidth) * 18;
             largeFontSize = (currWidth / maxWidth) * 4 + 12;
             if (itsBeginning) {
-              lineHeight += (height - lineHeight) / 2;
+              lineLength += (height - lineLength) / 2;
               lineWidth = 1;
             }
           }
 
-          if (lineHeight > 0) {
+          if (lineLength > 0) {
             this.scene.camera.renderLine({
               position: linePosition,
               vertices: [
                 [0, 0],
-                [0, -lineHeight],
+                [0, -lineLength],
               ],
               color: 'white',
               lineWidth,
@@ -667,7 +662,7 @@ const GanttChart = ({ records }) => {
           const nearLeft = Math.max(currDatePos.begin, camEdgePos.l - textWidth);
           const closestDistance = nearRight - nearLeft;
           const textPositionX = nearLeft + closestDistance / 2;
-          const textPositionY = startPosition[1] + this.size[1] - lineHeight;
+          const textPositionY = startPosition[1] + this.size[1] - currDateYOffset;
           this.scene.camera.renderText({
             text: currDatePos.shortText,
             color: `rgba(255, 255, 255, ${textColorAlpha})`,
@@ -679,7 +674,7 @@ const GanttChart = ({ records }) => {
             ],
           });
         }
-        if (currDatePos?.higherDate) {
+        if (currDatePos.higherDate) {
           ctx.font = `${largeFontSize}px Segoe UI`;
           const textWidth = ctx.measureText(currDatePos.higherDate.fullText).width;
           const nearRight = Math.min(currDatePos.higherDate.end, camEdgePos.r + textWidth);
@@ -1045,7 +1040,7 @@ const GanttChart = ({ records }) => {
       update(dt) {
         const { scrollDelta } = this.scene.mouse;
         const changeScale = scrollDelta * .1;
-        const MAX_HEIGHT = this.scene.camera.viewport.size[1] - TIMELINE_HEIGHT;
+        const MAX_HEIGHT = this.scene.camera.getSize()[1] - TIMELINE_HEIGHT;
         const MIN_HEIGHT = .5;
         if (this.scene.keyboard.isKeyDown('alt') &&
           (
@@ -1053,9 +1048,11 @@ const GanttChart = ({ records }) => {
             (changeScale < 0 && this.trackHeight > MIN_HEIGHT)
           )
         ) {
-          this.trackHeight = Math.max(Math.min(this.trackHeight + this.trackHeight * changeScale, MAX_HEIGHT), MIN_HEIGHT);
+          this.trackHeight = Math.max(
+            Math.min(this.trackHeight + this.trackHeight * changeScale, MAX_HEIGHT),
+            MIN_HEIGHT,
+          );
           this.trackLineHeight = this.trackHeight / 40;
-          // this.trackPadding = 2 * this.trackHeight / 40;
         }
       },
       render() {
