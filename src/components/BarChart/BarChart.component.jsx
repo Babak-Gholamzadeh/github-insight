@@ -5,6 +5,7 @@ import {
   getHumanReadableTimeAgo,
   getReadableTimePeriod,
   createPrecisionErrHandler,
+  getReadableTimePeriodObject,
 } from '../../utils';
 import {
   Engine,
@@ -713,6 +714,7 @@ const BarChart = ({ records }) => {
     // Timeline > cursor
     const timelineCursor = scene.createObject(EmptyObject, {
       cursorTime: {
+        totalMSs: 0,
         ms: 0,
         sec: 0,
         min: 0,
@@ -738,6 +740,7 @@ const BarChart = ({ records }) => {
         const passedMonths = Math.floor(handlePrecisionErr(passedMSs / 1000 / 60 / 60 / 24 / 30));
         const passedYears = Math.floor(handlePrecisionErr(passedMSs / 1000 / 60 / 60 / 24 / 30 / 12));
 
+        this.cursorTime.totalMSs = passedMSs;
         this.cursorTime.ms = passedMSs % 1000;
         this.cursorTime.sec = passedSecs % 60;
         this.cursorTime.min = passedMins % 60;
@@ -770,7 +773,7 @@ const BarChart = ({ records }) => {
       tag: 'timeline-cursor-line',
     });
 
-    const timelineCursorPoly = timelineCursor.createObject(Ploygon, {
+    const timelineCursorPoly = timelineCursor.createObject(Rect, {
       borderColor: '#1d6bd5',
       lineWidth: 2,
       backgroundColor: 'rgba(29, 107, 213, .8)',
@@ -778,17 +781,14 @@ const BarChart = ({ records }) => {
         color: 'rgba(29, 107, 213, .7)',
         blur: 100,
       },
-      vertices: [
-        [0, 0],
-        [5, 35],
-        [20, 35],
-        [20, -35],
-        [5, -35],
-      ],
-      size: [20, 70],
+      size: [100, 20],
+      padding: 5,
       update(dt) {
         const camSize = this.scene.camera.getSize();
-        this.transform.position[0] = camSize[0] / 2 - TIMELINE_WIDTH;
+        this.transform.position = [
+          -(camSize[0] / 2) + this.size[0],
+          -this.size[1],
+        ];
       },
     }, {
       tag: 'timeline-cursor-poly',
@@ -798,46 +798,71 @@ const BarChart = ({ records }) => {
       color: 'white',
       size: 12,
       text: '',
-      textAlign: 'center',
+      textAlign: 'left',
       weight: 400,
-      angle: -90,
       update(dt) {
         this.transform.position = [
-          this.parent.size[0] / 2 + this.size / 2,
-          0,
+          -this.parent.size[0] + this.parent.padding,
+          this.size / 2,
         ];
         const { cursorTime } = this.parent.parent;
-        const year = cursorTime.year.toString().padStart(2, '0');
-        const month = cursorTime.month.toString().padStart(2, '0');
-        const day = cursorTime.day.toString().padStart(2, '0');
-        const hour = cursorTime.hour.toString().padStart(2, '0');
-        const min = cursorTime.min.toString().padStart(2, '0');
-        const sec = cursorTime.sec.toString().padStart(2, '0');
-        const ms = cursorTime.ms.toString().padStart(3, '0');
+        const timePeriod = getReadableTimePeriodObject(cursorTime.totalMSs);
         // eslint-disable-next-line default-case
         switch (timeline.minimumVisibleTimeRange?.name) {
           case 'ms':
-            this.text = `${ms} ms`;
-            break;
           case 'sec':
-            this.text = `${sec}.${ms} ms`;
+            this.text = [
+              timePeriod.year,
+              timePeriod.month,
+              timePeriod.day,
+              timePeriod.hour,
+              timePeriod.min,
+              timePeriod.sec,
+              timePeriod.ms,
+            ].filter(Boolean).join(' ');
             break;
           case 'min':
-            this.text = `${hour}:${min}:${sec}`;
+            this.text = [
+              timePeriod.year,
+              timePeriod.month,
+              timePeriod.day,
+              timePeriod.hour,
+              timePeriod.min,
+              timePeriod.sec,
+            ].filter(Boolean).join(' ');
             break;
           case 'hour':
-            this.text = `${hour}:${min}:${sec}`;
+            this.text = [
+              timePeriod.year,
+              timePeriod.month,
+              timePeriod.day,
+              timePeriod.hour,
+              timePeriod.min,
+            ].filter(Boolean).join(' ');
             break;
           case 'day':
-            this.text = `${year}-${month}-${day}`;
+            this.text = [
+              timePeriod.year,
+              timePeriod.month,
+              timePeriod.day,
+              timePeriod.hour,
+            ].filter(Boolean).join(' ');
             break;
           case 'month':
-            this.text = `${year}-${month}`;
+            this.text = [
+              timePeriod.year,
+              timePeriod.month,
+              timePeriod.day,
+            ].filter(Boolean).join(' ');
             break;
           case 'year':
-            this.text = `${year}`;
+            this.text = [
+              timePeriod.year,
+              timePeriod.month,
+            ].filter(Boolean).join(' ');
             break;
         }
+        this.parent.size[0] = this.acutalWith + this.parent.padding * 2;
       },
     }, {
       tag: 'timeline-cursor-line',

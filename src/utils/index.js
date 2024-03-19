@@ -52,6 +52,28 @@ export const getReadableTimePeriodShorter = milliseconds => {
   return result || 'less than a min';
 };
 
+export const getReadableTimePeriodObject = milliseconds => {
+  const units = [
+    { unit: 'year', label: 'y', duration: 365.25 * 24 * 60 * 60 * 1000 },
+    { unit: 'month', label: 'mo', duration: 30.44 * 24 * 60 * 60 * 1000 },
+    { unit: 'day', label: 'd', duration: 24 * 60 * 60 * 1000 },
+    { unit: 'hour', label: 'h', duration: 60 * 60 * 1000 },
+    { unit: 'min', label: 'min', duration: 60 * 1000 },
+    { unit: 'sec', label: 'sec', duration: 1000 },
+    { unit: 'ms', label: 'ms', duration: 1 },
+  ];
+
+  return units
+    .reduce((result, {unit, label, duration}) => {
+      const value = Math.floor(milliseconds / duration);
+      milliseconds %= duration;
+      return {
+        ...result,
+        [unit]: value ? `${value}${label}` : '',
+      };
+    }, {});
+};
+
 export const getReadableTimePeriod = milliseconds => {
   const units = [
     { label: 'year', duration: 365.25 * 24 * 60 * 60 * 1000 },
