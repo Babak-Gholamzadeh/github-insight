@@ -773,7 +773,7 @@ const BarChart = ({ records }) => {
       tag: 'timeline-cursor-line',
     });
 
-    const timelineCursorPoly = timelineCursor.createObject(Rect, {
+    const timelineCursorBox = timelineCursor.createObject(Rect, {
       borderColor: '#1d6bd5',
       lineWidth: 2,
       backgroundColor: 'rgba(29, 107, 213, .8)',
@@ -785,16 +785,18 @@ const BarChart = ({ records }) => {
       padding: 5,
       update(dt) {
         const camSize = this.scene.camera.getSize();
+        const camEdgePos = this.scene.camera.getEdgePositionsOnScene();
+        const parentPos = this.parent.getPositionOnScene();
         this.transform.position = [
           -(camSize[0] / 2) + this.size[0],
-          -this.size[1],
+          Math.max(-this.size[1], camEdgePos.b - parentPos[1]),
         ];
       },
     }, {
-      tag: 'timeline-cursor-poly',
+      tag: 'timeline-cursor-box',
     });
 
-    timelineCursorPoly.createObject(Text, {
+    timelineCursorBox.createObject(Text, {
       color: 'white',
       size: 12,
       text: '',
@@ -862,6 +864,8 @@ const BarChart = ({ records }) => {
             ].filter(Boolean).join(' ');
             break;
         }
+        if (!this.text)
+          this.text = '0';
         this.parent.size[0] = this.acutalWith + this.parent.padding * 2;
       },
     }, {
