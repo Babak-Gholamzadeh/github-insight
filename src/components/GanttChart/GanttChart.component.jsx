@@ -111,7 +111,7 @@ const GanttChart = ({ records }) => {
     if (!ctx) return;
     const scene = refScene.current;
     const TIMELINE_HEIGHT = 60;
-    const INIT_MS_WIDTH = .0000005;
+    const INIT_MS_WIDTH = .00000002;
     // Camera
     const camera = refCamera.current = scene.createCamera({
       ctx, viewport,
@@ -737,7 +737,7 @@ const GanttChart = ({ records }) => {
     const timelineCursorPoly = timelineCursor.createObject(Ploygon, {
       borderColor: '#1d6bd5',
       lineWidth: 2,
-      backgroundColor: 'rgba(29, 107, 213, .9)',
+      backgroundColor: 'rgba(29, 107, 213, .8)',
       shadow: {
         color: 'rgba(29, 107, 213, .7)',
         blur: 100,

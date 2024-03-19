@@ -222,7 +222,7 @@ const PullRequests = () => {
 
   const fetchData = async () => {
     // console.time('fetchAllPullRequests');
-    await fetchAllPullRequests(auth, 'Release', updatePageData);
+    await fetchAllPullRequests(auth, 'node-addon-api', updatePageData);
     // console.timeEnd('fetchAllPullRequests');
   };
   useEffect(() => {

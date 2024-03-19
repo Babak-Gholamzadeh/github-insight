@@ -372,8 +372,10 @@ export class Camera extends EngineEntity {
     maxWidth = Infinity,
     multiline = false,
     lineHeight = size,
+    angle = 0,
   } = {}) {
     const posOnViewport = this.convertPosScene2Viewport(position);
+    this.ctx.save();
     this.ctx.font = `${weight} ${size}px Segoe UI`;
     this.ctx.fillStyle = color;
     this.ctx.textAlign = textAlign;
@@ -388,14 +390,18 @@ export class Camera extends EngineEntity {
         );
       });
     } else {
-      if (maxWidth <= 0)
+      if (maxWidth <= 0) {
+        this.ctx.restore();
         return acutalWith;
+      }
 
       if (acutalWith > maxWidth) {
         const dots = '...';
         const dotsWidth = this.ctx.measureText(dots).width;
-        if (dotsWidth > maxWidth)
+        if (dotsWidth > maxWidth) {
+          this.ctx.restore();
           return acutalWith;
+        }
         let truncatedText = '';
         let i = 0;
         while (this.ctx.measureText(truncatedText).width + dotsWidth < maxWidth) {
@@ -404,7 +410,10 @@ export class Camera extends EngineEntity {
         text = truncatedText.slice(0, -1) + dots;
         acutalWith = this.ctx.measureText(text).width;
       }
-      this.ctx.fillText(text, ...posOnViewport);
+      this.ctx.translate(...posOnViewport);
+      this.ctx.rotate(angle * (Math.PI / 180));
+      this.ctx.fillText(text, 0, 0);
+      this.ctx.restore();
     }
     return acutalWith;
   }
@@ -598,6 +607,7 @@ export class Text extends EmptyObject {
       textAlign: this.textAlign,
       multiline: this.multiline,
       lineHeight: this.lineHeight,
+      angle: this.angle,
     });
   }
 }
