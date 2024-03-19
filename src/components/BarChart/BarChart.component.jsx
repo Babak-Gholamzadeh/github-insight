@@ -72,6 +72,7 @@ const BarChart = ({ records }) => {
   const refKeyboard = useRef();
   const refMouse = useRef();
   const refTimeline = useRef();
+  const refPRs = useRef();
 
   const [viewport, setViewport] = useState({ size: [0, 0] });
   const [ctx, setCtx] = useState();
@@ -111,7 +112,7 @@ const BarChart = ({ records }) => {
     if (!ctx) return;
     const scene = refScene.current;
     const TIMELINE_WIDTH = 60;
-    const INIT_MS_HEIGHT = .0000005;
+    const INIT_MS_HEIGHT = .00000002;
     // Camera
     const camera = refCamera.current = scene.createCamera({
       ctx, viewport,
@@ -152,6 +153,7 @@ const BarChart = ({ records }) => {
         -viewport.size[0] / 2 + TIMELINE_WIDTH,
         viewport.size[1] / 2,
       ],
+      updateOrder: -10,
       renderOrder: 10,
     });
 
@@ -492,6 +494,7 @@ const BarChart = ({ records }) => {
         // const MAX_BG_HIGHLIGHT_OP = .05;
         log({ currMSHeight });
 
+        // @TODO: Display Bars (PRs)
 
         const itsEnding = currDurationPos.value === currDurationPos.max;
         textColorAlpha = 1;
@@ -761,22 +764,198 @@ const BarChart = ({ records }) => {
       renderOrder: -Infinity,
     });
 
+    // PRs
+    refPRs.current = scene.createObject(EmptyObject, {
+      updatePRs(records) {
+        log({ recordsLen: records.length });
 
-    scene.createObject(Rect, {
-      backgroundColor: 'yellow',
-      borderColor: 'red',
-      lineWidth: 5,
-      size: [100, 100],
+        this.objects = [];
+
+        records.forEach((record, i) => {
+          const openMS = (new Date(record.closed_at).getTime() || NOW) - new Date(record.created_at).getTime();
+          const pr = this.createObject(Rect, {
+            backgroundColor: `rgba(${PR_STATE_COLORS[record.state]})`,
+            radius: 5,
+            // visible: false,
+            update(dt) {
+              this.size = [
+                tracks.trackWidth - (tracks.trackPadding * 2),
+                openMS * timeline.currMSHeight,
+              ];
+              this.transform.position = [
+                -(i * tracks.trackWidth + tracks.trackPadding),
+                0,
+              ];
+
+              if (this.onMouseHover()) {
+                const BGcolor = [...PR_STATE_COLORS[record.state]];
+                BGcolor[3] = 1;
+                this.backgroundColor = `rgba(${BGcolor})`;
+                this.toolTip?.show();
+              } else if (this.onMouseOut()) {
+                this.backgroundColor = `rgba(${PR_STATE_COLORS[record.state]})`;
+                this.toolTip?.hide();
+              }
+            },
+          }, {
+            tag: 'pr-child',
+            renderOrder: records.length - i,
+          });
+          pr.userAvatar = pr.createObject(RectImage, {
+            url: record.user.avatar_url,
+            backgroundColor: 'rgba(255, 255, 255, .5)',
+            margin: 3,
+            update(dt) {
+              const squereSize = this.parent.size[0] - (this.margin * 2);
+              this.size = [
+                squereSize,
+                squereSize,
+              ];
+              this.radius = squereSize;
+              this.transform.position = [
+                -(this.parent.size[0] / 2 - this.size[0] / 2),
+                this.parent.size[1] - this.size[1] - this.margin,
+              ];
+              if (squereSize < 5 || this.parent.size[1] < squereSize + (this.margin * 2)) {
+                this.visible = false;
+              } else if (!this.visible) {
+                this.visible = true;
+              }
+            }
+          }, {
+            tag: 'pr-avatar',
+            position: [-3, 0],
+          });
+          pr.toolTip = pr.createObject(Rect, {
+            size: [280, 80],
+            backgroundColor: 'rgba(255, 255, 255, 1)',
+            radius: 10,
+            visible: false,
+            enable: false,
+            paddingSide: 5,
+            paddingTop: 10,
+            show() { this.visible = this.enable = true; },
+            hide() { this.visible = this.enable = false; },
+            update(dt) {
+              const mousePos = this.scene.mouse.getPositionOnScene();
+              this.transform.position = [
+                -tracks.trackWidth,
+                mousePos[1],
+              ];
+            }
+          }, {
+            tag: 'pr-tooltip',
+          });
+          const prTooltipIcon = pr.toolTip.createObject(RectImage, {
+            url: PR_STATE_ICONS[record.state],
+            backgroundColor: 'rgba(255, 255, 255, .5)',
+            size: [15, 15],
+            marginRight: 5,
+            marginBottom: 10,
+            update(dt) {
+              const x = -this.parent.size[0] + this.size[0] + this.parent.paddingSide;
+              const y = this.parent.size[1] - this.size[1] - this.parent.paddingTop;
+              this.transform.position = [x, y];
+            }
+          }, {
+            tag: 'pr-tooltip-icon',
+          });
+          const prTooltipTitle = pr.toolTip.createObject(Text, {
+            text: record.title,
+            color: '#1d6bd5',
+            size: 14,
+            maxWidth: pr.toolTip.size[0] - pr.toolTip.paddingSide - prTooltipIcon.size[0] - prTooltipIcon.marginRight - 10 - 25,
+            weight: 400,
+            marginRight: 10,
+            marginBottom: 10,
+            update(dt) {
+              const x = prTooltipIcon.transform.position[0] + prTooltipIcon.marginRight;
+              const y = prTooltipIcon.transform.position[1] + 2;
+              this.transform.position = [x, y];
+              this.maxWidth = pr.toolTip.size[0] - pr.toolTip.paddingSide - prTooltipIcon.size[0] - prTooltipIcon.marginRight - 10 - 25;
+            }
+          }, {
+            tag: 'pr-tooltip-title',
+          });
+          pr.toolTip.createObject(RectImage, {
+            url: record.user.avatar_url,
+            backgroundColor: 'rgba(255, 255, 255, .5)',
+            size: [25, 25],
+            radius: 25,
+            update(dt) {
+              const x = -pr.toolTip.paddingSide;
+              const y = prTooltipTitle.transform.position[1] - 7;
+              this.transform.position = [x, y];
+            }
+          }, {
+            tag: 'pr-tooltip-avatar',
+          });
+          const prTooltipRepoTitle = pr.toolTip.createObject(Text, {
+            text: record.repo.full_name,
+            color: '#000',
+            size: 10,
+            maxWidth: 100,
+            marginRight: 10,
+            marginBottom: 10,
+            weight: 400,
+            update(dt) {
+              const x = prTooltipIcon.transform.position[0] + prTooltipIcon.marginRight;
+              const y = prTooltipIcon.transform.position[1] - prTooltipIcon.marginBottom - this.size + 4;
+              this.transform.position = [x, y];
+            }
+          }, {
+            tag: 'pr-tooltip-repo-title',
+          });
+          pr.toolTip.createObject(Text, {
+            text: `Created ${getHumanReadableTimeAgo(record.created_at)}`,
+            color: '#333',
+            size: 10,
+            maxWidth: 100,
+            marginRight: 10,
+            marginBottom: 10,
+            update(dt) {
+              const x = prTooltipRepoTitle.transform.position[0] +
+                prTooltipRepoTitle.acutalWith +
+                prTooltipRepoTitle.marginRight;
+              const y = prTooltipRepoTitle.transform.position[1];
+              this.transform.position = [x, y];
+            }
+          }, {
+            tag: 'pr-tooltip-createdat',
+          });
+          pr.toolTip.createObject(Text, {
+            text: `It ${record.state === 'open' ? 'has' : 'had'} been open for ${getReadableTimePeriod(record.longRunning)}`,
+            color: '#000',
+            size: 13,
+            weight: 400,
+            maxWidth: pr.toolTip.size[0] - pr.toolTip.padding,
+            marginRight: 10,
+            marginBottom: 10,
+            update(dt) {
+              const x = prTooltipRepoTitle.transform.position[0];
+              const y = prTooltipRepoTitle.transform.position[1] -
+                prTooltipRepoTitle.marginBottom -
+                this.size;
+              this.transform.position = [x, y];
+              const stuffSizeInToolTip = (pr.toolTip.paddingSide * 2) + prTooltipIcon.size[0] + prTooltipIcon.marginRight + prTooltipRepoTitle.marginRight;
+              // log({ acutalWith: this.acutalWith, prToolW: pr.toolTip.size[0], prS: stuffSizeInToolTip });
+              if (this.acutalWith > pr.toolTip.size[0] - stuffSizeInToolTip)
+                pr.toolTip.size[0] = this.acutalWith + stuffSizeInToolTip;
+            }
+          }, {
+            tag: 'pr-tooltip-longrunning',
+          });
+        });
+      },
     }, {
-      tag: 'ref-object',
-      position: [0, 0],
+      tag: 'PR',
     });
   }, [ctx, viewport]);
 
 
   useEffect(() => {
     log({ uf: `[records]: ${records.length}` });
-    // refPRs.current?.updatePRs(records);
+    refPRs.current?.updatePRs(records);
   }, [records]);
 
   return (
