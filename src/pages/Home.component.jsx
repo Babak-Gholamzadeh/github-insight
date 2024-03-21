@@ -7,15 +7,15 @@ import './Home.style.scss';
 
 const HomePage = () => {
   const [auth, setAuth] = useState({
-    organization: '',
-    token: '',
+    organization: 'nodejs',
+    token: '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',
   });
 
   return (
     <div className="page-container home-page">
       <h1 className="page-title">GitHub Insight</h1>
-      {/* <GitHubAPIAuthentication onApply={setAuth} /> */}
-      {/* <OverviewSection auth={auth} /> */}
+      <GitHubAPIAuthentication onApply={setAuth} />
+      <OverviewSection auth={auth} />
       <PullRequests auth={auth} />
     </div>
   );

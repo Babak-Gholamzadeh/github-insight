@@ -85,7 +85,7 @@ const getPullRequests = async ({ organization, token }, repo, page, currentPagin
 };
 
 const RECORDS_PER_PAGE = 20;
-const PAR_PAGES = 5;
+const PAR_PAGES = 1;
 
 const getTotalNumOfRecords = async (token, url) => {
   const response = await axios.get(url, {

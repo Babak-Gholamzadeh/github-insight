@@ -128,3 +128,6 @@ export const createPrecisionErrHandler = smallestValue => r => {
     Math.ceil(r) :
     Math.round(r * factor) / factor;
 };
+
+export const addCommas = number =>
+ number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");

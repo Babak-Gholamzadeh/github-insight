@@ -8,6 +8,20 @@ import axios from 'axios';
 
 import './Repositories.style.scss';
 
+const getNumberOfPRs = async ({ organization, token, repo, state }) => {
+  const response = await axios.get(`https://api.github.com/repos/${organization}/${repo}/pulls?state=${state}&per_page=1&page=1`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return +response.headers.link
+    ?.split(', ')
+    .map(url => url.split('; '))
+    .find(([_, rel]) => rel.includes('last'))
+    ?.[0]
+    .split('&page=')[1].replace('>', '') || 0;
+}
+
 const getRepositories = async ({ organization, token }, page, currentPaginatin) => {
   try {
     const pagination = {
@@ -34,17 +48,21 @@ const getRepositories = async ({ organization, token }, page, currentPaginatin) 
           return acc;
         }, pagination);
 
-      records = response.data.map(({ id, name, html_url }) => ({
-        id,
-        name,
-        html_url,
-        PRs: {
-          total: 10,
-          draft: 2,
-          open: 5,
-          merged: 234,
-          closed: 42,
-        },
+      records = await Promise.all(response.data.map(async ({ id, name, html_url }) => {
+        const [numberOfOpenPRs, numberOfClosedPRs] = await Promise.all([
+          getNumberOfPRs({ organization, token, repo: name, state: 'open' }),
+          getNumberOfPRs({ organization, token, repo: name, state: 'closed' }),
+        ]);
+        return {
+          id,
+          name,
+          html_url,
+          PRs: {
+            total: numberOfOpenPRs + numberOfClosedPRs,
+            open: numberOfOpenPRs,
+            closed: numberOfClosedPRs,
+          },
+        };
       }));
     }
 
@@ -95,7 +113,7 @@ const Repositories = ({ auth }) => {
       <h3 className='section-title'>Repositories</h3>
       <RepositoryTools />
       <RepositoryList records={repos.records} />
-      <ListPagination pagination={repos.pagination} changePage={changePage}/>
+      <ListPagination pagination={repos.pagination} changePage={changePage} />
     </div>
   );
 };

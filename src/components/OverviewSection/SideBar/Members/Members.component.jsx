@@ -69,7 +69,16 @@ const Members = ({
                 </a>
               )}
             </div>
-            {list.length > 20 ? <a href={`https://github.com/orgs/${auth.organization}/people`} className="view-all" > View all</a> : null}
+            {
+              list.length > 20
+                ? <a
+                  href={`https://github.com/orgs/${auth.organization}/people`}
+                  className="view-all"
+                  target="_blank"
+                  rel="noreferrer"
+                >View all</a>
+                : null
+            }
           </div>
       }
     </div >

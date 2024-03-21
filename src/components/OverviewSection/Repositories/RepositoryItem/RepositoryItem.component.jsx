@@ -1,8 +1,6 @@
 import pullRequestIcon from '../../../../assets/images/git-pull-request-svgrepo-com.svg';
-import draftPullRequestIcon from '../../../../assets/images/git-pull-request-draft-svgrepo-com.svg';
-import openPullRequestIcon from '../../../../assets/images/git-pull-request-open-svgrepo-com.svg';
-import mergedPullRequestIcon from '../../../../assets/images/git-merge-svgrepo-com.svg';
-import closedPullRequestIcon from '../../../../assets/images/git-pull-request-closed-svgrepo-com.svg';
+import closedPullRequestIcon from '../../../../assets/images/check-svgrepo-com.svg';
+import { addCommas } from '../../../../utils';
 
 import './RepositoryItem.style.scss';
 
@@ -25,24 +23,12 @@ const RepositoryItem = ({
       </div>
       <div className='pr-numbers'>
         <div className='pr-section'>
-          <img src={pullRequestIcon} className="pr-icon" />
-          <div className='pr-number'>{PRs.total}</div>
+          <img src={pullRequestIcon} className="pr-icon" alt='open'/>
+          <div className='pr-number'>{addCommas(PRs.open)} Open</div>
         </div>
         <div className='pr-section'>
-          <img src={draftPullRequestIcon} className="pr-icon" />
-          <div className='pr-number'>{PRs.draft}</div>
-        </div>
-        <div className='pr-section'>
-          <img src={openPullRequestIcon} className="pr-icon" />
-          <div className='pr-number'>{PRs.open}</div>
-        </div>
-        <div className='pr-section'>
-          <img src={mergedPullRequestIcon} className="pr-icon" />
-          <div className='pr-number'>{PRs.merged}</div>
-        </div>
-        <div className='pr-section'>
-          <img src={closedPullRequestIcon} className="pr-icon" />
-          <div className='pr-number'>{PRs.closed}</div>
+          <img src={closedPullRequestIcon} className="pr-icon" alt='closed'/>
+          <div className='pr-number'>{addCommas(PRs.closed)} Closed</div>
         </div>
       </div>
     </div>
