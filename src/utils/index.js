@@ -31,6 +31,27 @@ export const getRandomColor = (seed) => {
   return color;
 };
 
+const hashCode = str => {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return hash;
+};
+
+const intToRGB = i => {
+  const c = (i & 0x00FFFFFF)
+      .toString(16)
+      .toUpperCase();
+  return "#" + "00000".substring(0, 6 - c.length) + c;
+};
+
+export const getRandomColorWithName = name => {
+  const hash = hashCode(name);
+  const color = intToRGB(hash);
+  return color;
+};
+
 export const getReadableTimePeriodShorter = milliseconds => {
   const units = [
     { label: 'y', duration: 365.25 * 24 * 60 * 60 * 1000 },

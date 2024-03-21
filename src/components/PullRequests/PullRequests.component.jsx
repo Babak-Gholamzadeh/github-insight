@@ -4,6 +4,7 @@ import ListPagination from '../ListPagination/ListPagination.component';
 import BarChart from '../BarChart/BarChart.component';
 import GanttChart from '../GanttChart/GanttChart.component';
 import axios from 'axios';
+import { getRandomColorWithName, log } from '../../utils';
 
 import './PullRequests.style.scss';
 
@@ -85,7 +86,6 @@ const getPullRequests = async ({ organization, token }, repo, page, currentPagin
 };
 
 const RECORDS_PER_PAGE = 20;
-const PAR_PAGES = 1;
 
 const getTotalNumOfRecords = async (token, url) => {
   const response = await axios.get(url, {
@@ -107,80 +107,94 @@ const getTotalNumOfRecords = async (token, url) => {
 let sortedRecordsByLR = [];
 let sortedRecordsByCA = [];
 
-const fetchAllPullRequests = async ({ organization, token }, repo, setTotalFecthedRecords) => {
-  try {
-    if (organization && token && repo) {
-      const totalNumOfRecords = await getTotalNumOfRecords(token, `https://api.github.com/repos/${organization}/${repo}/pulls?state=all&per_page=1&page=1`);
-      // const totalNumOfRecords = 1000;
-      const totalNumOfPages = Math.ceil(totalNumOfRecords / RECORDS_PER_PAGE);
-      // console.log({
-      //   totalNumOfRecords,
-      //   totalNumOfPages,
-      // });
+const fetchAllPullRequests = async (
+  now,
+  { organization, token },
+  repos,
+  setTotalFecthedRecords,
+  updateFetchingDataProgress,
+) => {
+  if (!organization || !token || !repos?.length) return;
 
-      for (let p = 0; p < totalNumOfPages; p += PAR_PAGES) {
-        const beingRange = p;
-        const endRange = Math.min(beingRange + PAR_PAGES, totalNumOfPages);
-        const currParPages = endRange - beingRange;
-        // console.log(`Fetch pages from ${beingRange} to ${endRange}`);
-        const recordsPerPageChunk = await Promise.all(Array.from({ length: currParPages }, async (_, i) => {
-          const url = `https://api.github.com/repos/${organization}/${repo}/pulls?state=all&per_page=${RECORDS_PER_PAGE}&page=${i + beingRange + 1}`;
-          const response = await axios.get(url, {
+  let numberOfTOtalRecords = 0;
+  let numberOfFecthedRecord = 0;
+  repos.forEach(repo => {
+    repo.currPage = 1;
+    repo.lastPage = Math.ceil(repo.numberOfPRs / RECORDS_PER_PAGE);
+    repo.color = getRandomColorWithName(repo.name);
+    numberOfTOtalRecords += repo.numberOfPRs;
+  });
+
+  try {
+    let i = 0;
+    while (repos.length && i++ < 20) {
+      for (const { currPage, name, color } of repos) {
+        const url = `https://api.github.com/repos/${organization}/${name}/pulls?state=all&per_page=${RECORDS_PER_PAGE}&page=${currPage}`;
+        let response;
+        try {
+          response = await axios.get(url, {
             headers: {
               Authorization: `Bearer ${token}`,
             },
           });
-          return response.data.map(({
-            id,
-            state,
-            title,
-            html_url,
-            user,
-            created_at,
-            updated_at,
-            closed_at,
-            merged_at,
-            draft,
-            base: { repo },
-          }) => ({
-            id,
-            state: state === 'open' ? (draft ? 'draft' : state) : (merged_at ? 'merged' : state),
-            title,
-            html_url,
-            user: {
-              name: user?.login,
-              avatar_url: user?.avatar_url,
-              html_url: user?.html_url,
-            },
-            repo: {
-              full_name: repo?.full_name || '',
-              html_url: repo?.html_url || '',
-            },
-            longRunning: ((new Date(closed_at).getTime() || Date.now()) - new Date(created_at).getTime()),
-            created_at,
-            updated_at,
-            closed_at,
-          }));
+        } catch (err) {
+          console.log('near err:', err);
+          throw err;
+        }
+        const recordsPerPage = response.data.map(({
+          id,
+          state,
+          title,
+          html_url,
+          user,
+          created_at,
+          updated_at,
+          closed_at,
+          merged_at,
+          draft,
+          base: { repo },
+        }) => ({
+          id,
+          state: state === 'open' ? (draft ? 'draft' : state) : (merged_at ? 'merged' : state),
+          title,
+          html_url,
+          user: {
+            name: user?.login,
+            avatar_url: user?.avatar_url,
+            html_url: user?.html_url,
+          },
+          repo: {
+            full_name: repo?.full_name || '',
+            html_url: repo?.html_url || '',
+            color,
+          },
+          longRunning: ((new Date(closed_at).getTime() || now) - new Date(created_at).getTime()),
+          created_at,
+          updated_at,
+          closed_at,
         }));
-        const flatData = recordsPerPageChunk.flat(1);
+
         // Sorted by Long-Running
-        sortedRecordsByLR.push(...flatData);
-        sortedRecordsByLR
-          .sort((a, b) => {
-            const diff1 = (new Date(a.closed_at).getTime() || Date.now()) - new Date(a.created_at).getTime();
-            const diff2 = (new Date(b.closed_at).getTime() || Date.now()) - new Date(b.created_at).getTime();
-            return diff2 - diff1;
-          });
+        sortedRecordsByLR.push(...recordsPerPage);
+        sortedRecordsByLR.sort((a, b) => b.longRunning - a.longRunning);
         // Sorted By Closed-At
-        sortedRecordsByCA.push(...flatData);
-        sortedRecordsByCA
-          .sort((a, b) => {
-            const diff1 = new Date(a.closed_at).getTime() || Date.now();
-            const diff2 = new Date(b.closed_at).getTime() || Date.now();
-            return diff2 - diff1;
-          });
+        sortedRecordsByCA.push(...recordsPerPage);
+        sortedRecordsByCA.sort((a, b) => {
+          const diff1 = new Date(a.closed_at).getTime() || Date.now();
+          const diff2 = new Date(b.closed_at).getTime() || Date.now();
+          return diff2 - diff1;
+        });
         setTotalFecthedRecords(sortedRecordsByLR.length);
+
+        // Update progress bar
+        numberOfFecthedRecord += recordsPerPage.length;
+        updateFetchingDataProgress(numberOfFecthedRecord, numberOfTOtalRecords);
       }
+
+      repos = repos
+        .map(({ currPage, ...rest }) => ({ ...rest, currPage: currPage + 1, }))
+        .filter(({ currPage, lastPage }) => currPage <= lastPage);
+      console.log('repos:', repos);
     }
   } catch (error) {
     console.error('Error fetching pull requests:', error.message);
@@ -204,8 +218,25 @@ const auth = {
   token: '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',
 };
 
+const selectedRepos = [
+  {
+    name: 'node-addon-api',
+    numberOfPRs: 689,
+  },
+  {
+    name: 'Release',
+    numberOfPRs: 281,
+  },
+  {
+    name: 'nodejs.org',
+    numberOfPRs: 4901,
+  },
+];
+
 // const PullRequests = ({ auth }) => {
 const PullRequests = () => {
+  const [NOW, setNOW] = useState(0);
+  const [progress, setProgress] = useState(0);
   // console.log('PullRequests Component');
 
   const [paginatedRecords, setPaginatedRecords] = useState([]);
@@ -220,15 +251,14 @@ const PullRequests = () => {
     perPage: 10,
   });
 
-  const fetchData = async () => {
-    // console.time('fetchAllPullRequests');
-    await fetchAllPullRequests(auth, 'node-addon-api', updatePageData);
-    // console.timeEnd('fetchAllPullRequests');
+  const fetchData = async now => {
+    await fetchAllPullRequests(now, auth, selectedRepos, updatePageData, updateFetchingDataProgress);
   };
   useEffect(() => {
-    // console.log('useEffect[auth]');
-    fetchData();
-  }, [auth]);
+    const now = Date.now();
+    fetchData(now);
+    setNOW(now);
+  }, [auth, selectedRepos]);
 
   const updatePageData = (totalFecthedRecords) => {
     // console.log('updatePageData > totalFecthedRecords:', totalFecthedRecords);
@@ -246,6 +276,11 @@ const PullRequests = () => {
     setAllSortedRecordsByLR([...sortedRecordsByLR]);
     setAllSortedRecordsByCA([...sortedRecordsByCA]);
     // console.log('sortedRecordsByCA[%d]:', startIndex, sortedRecordsByCA[startIndex].title);
+  };
+
+  const updateFetchingDataProgress = (numberOfFecthedRecord, numberOfTOtalRecords) => {
+    log({ numberOfFecthedRecord, numberOfTOtalRecords });
+    setProgress(numberOfFecthedRecord * 100 / numberOfTOtalRecords);
   };
 
   const changePage = pageNumber => {
@@ -266,11 +301,30 @@ const PullRequests = () => {
   return (
     <div className="pull-requests">
       <h3 className='section-title'>Long-running Pull Requests</h3>
-      <BarChart records={allSortedRecordsByLR} />
-      <GanttChart records={allSortedRecordsByCA} />
-      <PullRequestList records={paginatedRecords} />
-      <ListPagination pagination={pagination} changePage={changePage} />
-    </div>
+      <div className={'selected-reop-list' + (progress >= 100 ? ' data-loaded' : '')}>
+        {progress < 100 ? <div className='progress-bar' style={{ width: `${progress}%` }}>{`${Math.round(progress)}%`}</div> : null}
+        {
+          selectedRepos.map(({ name, color }) => {
+            return (
+              <div className='selected-repo-item' key={name}>
+                <div className='selected-repo-item-name'>{name}</div>
+                <div className='selected-repo-item-color' style={{ backgroundColor: color }}></div>
+              </div>
+            );
+          })
+        }
+      </div>
+      <div className='visualization-section'>
+        <BarChart records={allSortedRecordsByLR} NOW={NOW} />
+      </div>
+      <div className='visualization-section'>
+        <GanttChart records={allSortedRecordsByCA} NOW={NOW} />
+      </div>
+      <div className='visualization-section'>
+        <PullRequestList records={paginatedRecords} />
+        <ListPagination pagination={pagination} changePage={changePage} />
+      </div>
+    </div >
   );
 };
 

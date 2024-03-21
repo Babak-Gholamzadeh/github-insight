@@ -61,7 +61,7 @@ const BG_HIGHLIGHT_COLORS = (op) => [
   `rgba(85, 107, 47, ${op})`,     // Dark Olive Green
 ];
 
-const GanttChart = ({ records }) => {
+const GanttChart = ({ NOW, records }) => {
   log({ ComponentRerendered: 'GanttChart' });
   const refWrapper = useRef();
   const refCanvas = useRef();
@@ -75,7 +75,6 @@ const GanttChart = ({ records }) => {
 
   const [viewport, setViewport] = useState({ size: [0, 0] });
   const [ctx, setCtx] = useState();
-  const [NOW, setNOW] = useState(Date.now());
 
   const setupViewport = () => {
     const wrapperStyle = window.getComputedStyle(refWrapper.current);
@@ -90,18 +89,19 @@ const GanttChart = ({ records }) => {
       size: [canvas.width, canvas.height],
     });
     setCtx(canvas.getContext('2d'));
-    setNOW(Date.now());
   };
 
   const setupScene = () => {
-    const scene = refScene.current = new Scene();
+    const scene = refScene.current = new Scene({
+      backgroundColor: '#0d1117',
+    });
     refEngine.current = new Engine(scene);
     refKeyboard.current = scene.createKeyboard();
     refMouse.current = scene.createMouse();
   };
 
   useEffect(() => {
-    log({ uf: '[]' });
+    log({ uf: '[]', NOW });
     setupViewport();
     setupScene();
   }, []);

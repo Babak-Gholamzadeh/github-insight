@@ -1,10 +1,65 @@
 .pull-requests {
-
-  .pr-list {
+  .selected-reop-list {
     display: flex;
-    flex-direction: column;
+    justify-content: left;
     border: 1px solid #30363e;
     border-radius: 10px;
+    padding: 10px;
+    margin-bottom: 30px;
+    position: relative;
+    overflow: hidden;
+    background-color: rgba(#30363e, .3);
+    &.data-loaded {
+      background-color: transparent;
+    }
+
+    .progress-bar {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      left: 0;
+      top: 0;
+      background-color: #0d1117;
+      z-index: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 18px;
+      color: rgba(#fff, .05);
+      font-weight: 600;
+    }
+
+    .selected-repo-item {
+      z-index: 1;
+      width: auto;
+      padding: 10px;
+      margin: 0 10px 0 0;
+      display: flex;
+      align-items: center;
+
+      .selected-repo-item-name {
+        font-size: 14px;
+        color: #aaa;
+        margin-right: 10px;
+      }
+
+      .selected-repo-item-color {
+        width: 20px;
+        height: 10px;
+        border-radius: 10px;
+      }
+    }
+  }
+
+  .visualization-section {
     margin-bottom: 50px;
+
+    .pr-list {
+      display: flex;
+      flex-direction: column;
+      border: 1px solid #30363e;
+      border-radius: 10px;
+      margin-bottom: 50px;
+    }
   }
 }

@@ -63,7 +63,7 @@ const BG_HIGHLIGHT_COLORS = (op) => [
   `rgba(85, 107, 47, ${op})`,     // Dark Olive Green
 ];
 
-const BarChart = ({ records }) => {
+const BarChart = ({ NOW, records }) => {
   log({ ComponentRerendered: 'GanttChart' });
   const refWrapper = useRef();
   const refCanvas = useRef();
@@ -77,7 +77,6 @@ const BarChart = ({ records }) => {
 
   const [viewport, setViewport] = useState({ size: [0, 0] });
   const [ctx, setCtx] = useState();
-  const [NOW, setNOW] = useState(Date.now());
 
   const setupViewport = () => {
     const wrapperStyle = window.getComputedStyle(refWrapper.current);
@@ -92,11 +91,12 @@ const BarChart = ({ records }) => {
       size: [canvas.width, canvas.height],
     });
     setCtx(canvas.getContext('2d'));
-    setNOW(Date.now());
   };
 
   const setupScene = () => {
-    const scene = refScene.current = new Scene();
+    const scene = refScene.current = new Scene({
+      backgroundColor: '#0d1117',
+    });
     refEngine.current = new Engine(scene);
     refKeyboard.current = scene.createKeyboard();
     refMouse.current = scene.createMouse();
@@ -493,7 +493,7 @@ const BarChart = ({ records }) => {
         let currDateXOffset = width;
         let higherDateXOffset = 0;
         // const MAX_BG_HIGHLIGHT_OP = .05;
-        log({ currMSHeight });
+        // log({ currMSHeight });
 
         const itsEnding = currDurationPos.value === currDurationPos.max;
         textColorAlpha = 1;
@@ -932,7 +932,6 @@ const BarChart = ({ records }) => {
         this.objects = [];
 
         records.forEach((record, i) => {
-          const openMS = (new Date(record.closed_at).getTime() || NOW) - new Date(record.created_at).getTime();
           const pr = this.createObject(Rect, {
             backgroundColor: `rgba(${PR_STATE_COLORS[record.state]})`,
             radius: 5,
@@ -940,7 +939,7 @@ const BarChart = ({ records }) => {
             update(dt) {
               this.size = [
                 tracks.trackWidth - (tracks.trackPadding * 2),
-                openMS * timeline.currMSHeight,
+                record.longRunning * timeline.currMSHeight,
               ];
               this.transform.position = [
                 -(i * tracks.trackWidth + tracks.trackPadding),
