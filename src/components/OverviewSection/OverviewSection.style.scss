@@ -4,10 +4,11 @@
   margin-bottom: 50px;
 
   .repositories {
-    width: 75%;
+    width: 100%;
   }
 
   .side-bar {
-    width: 25%;
+    min-width: 25%;
+    max-width: 25%;
   }
 }

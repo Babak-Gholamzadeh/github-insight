@@ -3,12 +3,12 @@ import axios from 'axios';
 
 import './Members.style.scss';
 
-const getMembers = async ({ organization, token }) => {
+const getMembers = async ({ owner, token }) => {
   try {
     const members = [];
 
-    if (organization && token) {
-      let nextPageUrl = `https://api.github.com/orgs/${organization}/members?per_page=21&page=1`;
+    if (owner && token) {
+      let nextPageUrl = `https://api.github.com/orgs/${owner}/members?per_page=21&page=1`;
       const response = await axios.get(nextPageUrl, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -39,11 +39,11 @@ const Members = ({
   useEffect(() => {
     (async () => {
       const members = await getMembers(auth);
-      if (members === 403) {
-        setForbiddenError(true);
-      } else {
+      if(Array.isArray(members)) {
         setForbiddenError(false);
         setList(members);
+      } else {
+        setForbiddenError(true);
       }
     })();
   }, [auth]);
@@ -72,7 +72,7 @@ const Members = ({
             {
               list.length > 20
                 ? <a
-                  href={`https://github.com/orgs/${auth.organization}/people`}
+                  href={`https://github.com/orgs/${auth.owner}/people`}
                   className="view-all"
                   target="_blank"
                   rel="noreferrer"

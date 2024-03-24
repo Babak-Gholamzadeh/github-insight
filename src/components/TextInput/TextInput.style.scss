@@ -12,6 +12,16 @@
     box-shadow: #2f81f7 0px 0px 0px 1px inset;
   }
 
+  &.error {
+    border-color: #e53337;
+    box-shadow: #e53337 0px 0px 0px 1px inset;
+  }
+
+  &.success {
+    border-color: #3fb950;
+    box-shadow: #3fb950 0px 0px 0px 1px inset;
+  }
+
   input {
     width: 100%;
     background-color: transparent;
@@ -19,5 +29,6 @@
     font-size: 14px;
     line-height: 20px;
     padding: 5px 12px;
+
   }
 }

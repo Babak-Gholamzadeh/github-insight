@@ -1,6 +1,12 @@
 .members {
   width: 100%;
-  > div {
+
+  .forbidden {
+    color: #aaa;
+    font-size: 14px;
+  }
+
+  >div {
     display: flex;
     flex-direction: column;
   }

@@ -4,12 +4,12 @@ import axios from 'axios';
 
 import './Teams.style.scss';
 
-const getTeams = async ({ organization, token }) => {
+const getTeams = async ({ owner, token }) => {
   try {
     const teams = [];
 
-    if (organization && token) {
-      let nextPageUrl = `https://api.github.com/orgs/${organization}/teams?per_page=100&page=1`;
+    if (owner && token) {
+      let nextPageUrl = `https://api.github.com/orgs/${owner}/teams?per_page=100&page=1`;
       while (nextPageUrl) {
         const response = await axios.get(nextPageUrl, {
           headers: {
@@ -50,11 +50,11 @@ const Teams = ({
   useEffect(() => {
     (async () => {
       const teams = await getTeams(auth);
-      if (teams === 403) {
-        setForbiddenError(true);
-      } else {
+      if(Array.isArray(teams)) {
         setForbiddenError(false);
         setList(teams);
+      } else {
+        setForbiddenError(true);
       }
     })();
   }, [auth]);

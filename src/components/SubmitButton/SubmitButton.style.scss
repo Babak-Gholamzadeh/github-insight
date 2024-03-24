@@ -3,16 +3,64 @@
   display: flex;
   border-radius: 6px;
   padding: 12px 24px;
-  background-color: #238636;
-  color: #f1f7f2;
   font-size: 16px;
   font-weight: 800;
   justify-content: center;
   align-items: center;
+  background-color: #238636;
+  border: 3px solid #238636;
+  color: #f1f7f2;
+
   &:hover {
     background-color: #2ea043;
+    border-color: #2ea043;
+    color: #ffffff;
   }
+
   &:active {
     background-color: #238636;
+    border-color: #238636;
+    color: #dde3de;
+  }
+
+  &.neutral {
+    background-color: transparent;
+
+    &:hover {
+      border-color: #34ae4a;
+      color: #ffffff;
+    }
+
+    &:active {
+      border-color: #217c33;
+      color: #d2d6d3;
+    }
+  }
+
+  &.success {
+    background-color: #238636;
+    border-color: #238636;
+    pointer-events: none;
+  }
+
+  &.error {
+    background-color: transparent;
+    border-color: #e53337;
+    &:hover {
+      border-color: #fd3c3f;
+      color: #ffffff;
+    }
+
+    &:active {
+      border-color: #ce3032;
+      color: #d2d6d3;
+    }
+  }
+
+  &.disabled {
+    background-color: #7e7e7e;
+    border-color: #7e7e7e;
+    cursor: default;
+    pointer-events: none;
   }
 }

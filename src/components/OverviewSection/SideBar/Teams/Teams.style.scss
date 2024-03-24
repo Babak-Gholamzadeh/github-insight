@@ -1,5 +1,10 @@
 .teams {
   width: 100%;
+  
+  .forbidden {
+    color: #aaa;
+    font-size: 14px;
+  }
 
   .team-list {
     display: flex;

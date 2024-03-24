@@ -8,8 +8,8 @@ import axios from 'axios';
 
 import './Repositories.style.scss';
 
-const getNumberOfPRs = async ({ organization, token, repo, state }) => {
-  const response = await axios.get(`https://api.github.com/repos/${organization}/${repo}/pulls?state=${state}&per_page=1&page=1`, {
+const getNumberOfPRs = async ({ owner, token, repo, state }) => {
+  const response = await axios.get(`https://api.github.com/repos/${owner}/${repo}/pulls?state=${state}&per_page=1&page=1`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -22,7 +22,7 @@ const getNumberOfPRs = async ({ organization, token, repo, state }) => {
     .split('&page=')[1].replace('>', '') || 0;
 }
 
-const getRepositories = async ({ organization, token }, page, currentPaginatin) => {
+const getRepositories = async ({ owner, token }, page, currentPaginatin) => {
   try {
     const pagination = {
       ...currentPaginatin,
@@ -30,8 +30,8 @@ const getRepositories = async ({ organization, token }, page, currentPaginatin) 
     };
     let records = [];
 
-    if (organization && token) {
-      let nextPageUrl = `https://api.github.com/orgs/${organization}/repos?per_page=10&page=${page}`;
+    if (owner) {
+      let nextPageUrl = `https://api.github.com/users/${owner}/repos?sort=updated&direction=desc&per_page=10&page=${page}`;
       const response = await axios.get(nextPageUrl, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -50,8 +50,8 @@ const getRepositories = async ({ organization, token }, page, currentPaginatin) 
 
       records = await Promise.all(response.data.map(async ({ id, name, html_url }) => {
         const [numberOfOpenPRs, numberOfClosedPRs] = await Promise.all([
-          getNumberOfPRs({ organization, token, repo: name, state: 'open' }),
-          getNumberOfPRs({ organization, token, repo: name, state: 'closed' }),
+          getNumberOfPRs({ owner, token, repo: name, state: 'open' }),
+          getNumberOfPRs({ owner, token, repo: name, state: 'closed' }),
         ]);
         return {
           id,
@@ -72,13 +72,13 @@ const getRepositories = async ({ organization, token }, page, currentPaginatin) 
     };
   } catch (error) {
     console.error('Error fetching repos:', error.message);
-    throw error;
+    return error.response?.status || 500;
   }
 };
 
-const RepositoryList = ({ records }) => {
+const RepositoryList = ({ records, addRepo }) => {
   const noItem = <div className="no-item">There is nothing here!</div>;
-  const items = records?.map(({ id, ...rest }) => <RepositoryItem {...rest} key={id} />);
+  const items = records?.map(({ id, ...rest }) => <RepositoryItem {...rest} id={id} key={id} addRepo={addRepo} />);
 
   return (
     <div className='repo-list'>
@@ -87,7 +87,8 @@ const RepositoryList = ({ records }) => {
   );
 };
 
-const Repositories = ({ auth }) => {
+const Repositories = ({ auth, addRepo }) => {
+  const [forbidden, setForbiddenError] = useState(false);
   const [repos, setRepos] = useState({
     records: [],
     pagination: {
@@ -101,7 +102,14 @@ const Repositories = ({ auth }) => {
 
   const changePage = async pageNumber => {
     const result = await getRepositories(auth, pageNumber, repos.pagination);
-    setRepos(result);
+    if (typeof result === 'object') {
+      setForbiddenError(false);
+      setRepos(result);
+    } else {
+      console.log('getRepositories err:', result);
+      if (result === 403)
+        setForbiddenError(true);
+    }
   };
 
   useEffect(() => {
@@ -111,9 +119,15 @@ const Repositories = ({ auth }) => {
   return (
     <div className="repositories">
       <h3 className='section-title'>Repositories</h3>
-      <RepositoryTools />
-      <RepositoryList records={repos.records} />
-      <ListPagination pagination={repos.pagination} changePage={changePage} />
+      {
+        forbidden
+          ? <div className='forbidden'>You don't have access to this part</div>
+          : <div>
+            <RepositoryTools />
+            <RepositoryList records={repos.records} addRepo={addRepo} />
+            <ListPagination pagination={repos.pagination} changePage={changePage} />
+          </div>
+      }
     </div>
   );
 };

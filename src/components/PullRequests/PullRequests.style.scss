@@ -9,6 +9,10 @@
     position: relative;
     overflow: hidden;
     background-color: rgba(#30363e, .3);
+    flex-wrap: wrap;
+    // position: fixed;
+    // top: 0;
+
     &.data-loaded {
       background-color: transparent;
     }
@@ -36,6 +40,20 @@
       margin: 0 10px 0 0;
       display: flex;
       align-items: center;
+      user-select: none;
+      cursor: pointer;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      transition: border-color .5s, background-color 1s;
+
+      &:hover {
+        border-color: rgba(#30363e, 1);
+        background-color: #010409;
+      }
+
+      &.disabled {
+        text-decoration: line-through;
+      }
 
       .selected-repo-item-name {
         font-size: 14px;

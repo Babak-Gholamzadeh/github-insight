@@ -4,7 +4,17 @@
   box-sizing: border-box;
 }
 
-button, input {
+html,
+body {
+  overflow-x: hidden;
+}
+
+body {
+  position: relative;
+}
+
+button,
+input {
   border: none;
   outline: none;
 }
@@ -13,7 +23,9 @@ button {
   cursor: pointer;
 }
 
-html, body, #root {
+html,
+body,
+#root {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;

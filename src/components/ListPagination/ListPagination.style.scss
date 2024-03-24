@@ -13,6 +13,8 @@
     font-size: 14px;
     font-weight: 600;
     margin: 0 2px;
+    user-select: none;
+
     &:not(.disabled):not(.curr-page):hover {
       background-color: #21262c;
     }
@@ -21,7 +23,6 @@
       cursor: unset;
       color: #3e444d;
       pointer-events: none;
-      user-select: none;
     }
   }
 
