@@ -2,8 +2,6 @@ import { useEffect, useState } from 'react';
 import RepositoryTools from './RepositoryTools/RepositoryTools.component';
 import RepositoryItem from './RepositoryItem/RepositoryItem.component';
 import ListPagination from '../../ListPagination/ListPagination.component';
-// import APIs from '../../../api/config';
-// import useApi from '../../../api/useApi';
 import axios from 'axios';
 
 import './Repositories.style.scss';
@@ -76,18 +74,22 @@ const getRepositories = async ({ owner, token }, page, currentPaginatin) => {
   }
 };
 
-const RepositoryList = ({ records, addRepo }) => {
-  const noItem = <div className="no-item">There is nothing here!</div>;
-  const items = records?.map(({ id, ...rest }) => <RepositoryItem {...rest} id={id} key={id} addRepo={addRepo} />);
+const RepositoryList = ({ records, selectedRepos, addRepo, removeRepo }) =>
+(
+  <div className='repo-list'>
+    {records?.map(({ id, ...rest }) =>
+      <RepositoryItem
+        id={id}
+        key={id}
+        selectedRepos={selectedRepos}
+        addRepo={addRepo}
+        removeRepo={removeRepo}
+        {...rest}
+      />)}
+  </div>
+);
 
-  return (
-    <div className='repo-list'>
-      {items || noItem}
-    </div>
-  );
-};
-
-const Repositories = ({ auth, addRepo }) => {
+const Repositories = ({ auth, selectedRepos, addRepo, removeRepo }) => {
   const [forbidden, setForbiddenError] = useState(false);
   const [repos, setRepos] = useState({
     records: [],
@@ -121,10 +123,15 @@ const Repositories = ({ auth, addRepo }) => {
       <h3 className='section-title'>Repositories</h3>
       {
         forbidden
-          ? <div className='forbidden'>You don't have access to this part</div>
+          ? <div className='forbidden'>You don't have access to this section</div>
           : <div>
             <RepositoryTools />
-            <RepositoryList records={repos.records} addRepo={addRepo} />
+            <RepositoryList
+              records={repos.records}
+              selectedRepos={selectedRepos}
+              addRepo={addRepo}
+              removeRepo={removeRepo}
+            />
             <ListPagination pagination={repos.pagination} changePage={changePage} />
           </div>
       }

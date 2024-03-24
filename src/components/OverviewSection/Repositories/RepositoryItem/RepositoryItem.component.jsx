@@ -1,6 +1,8 @@
 import pullRequestIcon from '../../../../assets/images/git-pull-request-svgrepo-com.svg';
 import closedPullRequestIcon from '../../../../assets/images/check-svgrepo-com.svg';
 import { addCommas } from '../../../../utils';
+import addIcon from '../../../../assets/images/plus-svgrepo-com.svg';
+import removeIcon from '../../../../assets/images/minus-svgrepo-com.svg';
 
 import './RepositoryItem.style.scss';
 
@@ -9,11 +11,20 @@ const RepositoryItem = ({
   name,
   html_url,
   PRs,
+  selectedRepos,
   addRepo,
+  removeRepo,
 }) => {
+  const selected = selectedRepos.find(repo => repo.id === id);
   return (
     <div className="repo-item">
-      <div>
+      <div
+        className='action-button'
+        onClick={() => selected ? removeRepo(id) : addRepo({ id, name, numberOfPRs: PRs.total })}
+      >
+        <img src={selected ? removeIcon : addIcon} alt="" />
+      </div>
+      <div className='repo-title'>
         <a
           href={html_url}
           className="repo-link"
@@ -22,9 +33,6 @@ const RepositoryItem = ({
         >
           {name}
         </a>
-      </div>
-      <div className='action-button'>
-        <button onClick={() => addRepo({ id, name, numberOfPRs: PRs.total })}></button>
       </div>
       <div className='pr-numbers'>
         <div className='pr-section'>

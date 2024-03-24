@@ -4,7 +4,7 @@ import ListPagination from '../ListPagination/ListPagination.component';
 import BarChart from '../BarChart/BarChart.component';
 import GanttChart from '../GanttChart/GanttChart.component';
 import axios from 'axios';
-import { getRandomColorWithName, log } from '../../utils';
+import { log } from '../../utils';
 
 import './PullRequests.style.scss';
 
@@ -22,7 +22,7 @@ const fetchAllPullRequests = async (
   setTotalFecthedRecords,
   updateFetchingDataProgress,
 ) => {
-  if (!owner || !token || !repos?.length) return;
+  if (!owner || !token) return;
 
   const localFetchDataExecutionId = globalFetchDataExecutionId = Math.floor(Math.random() * 100);
   log({ startFetchingData: localFetchDataExecutionId });
@@ -36,7 +36,6 @@ const fetchAllPullRequests = async (
   repos.forEach(repo => {
     repo.currPage = 1;
     repo.lastPage = Math.ceil(repo.numberOfPRs / RECORDS_PER_PAGE);
-    repo.color = getRandomColorWithName(repo.name);
     numberOfTOtalRecords += repo.numberOfPRs;
   });
 
@@ -139,7 +138,7 @@ const PullRequestList = ({ records }) => {
   );
 };
 
-const PullRequests = ({ auth, selectedRepos, toggleSelectedRepo }) => {
+const PullRequests = ({ auth, selectedRepos }) => {
   const [NOW, setNOW] = useState(0);
   const [progress, setProgress] = useState(0);
   // console.log('PullRequests Component');
@@ -220,7 +219,7 @@ const PullRequests = ({ auth, selectedRepos, toggleSelectedRepo }) => {
   return (
     <div className="pull-requests">
       <h3 className='section-title'>Long-running Pull Requests</h3>
-      <div className={'selected-reop-list' + (progress >= 100 ? ' data-loaded' : '')}>
+      {/* <div className={'selected-reop-list' + (progress >= 100 ? ' data-loaded' : '')}>
         {progress < 100 ? <div className='progress-bar' style={{ width: `${progress}%` }}>{`${Math.round(progress)}%`}</div> : null}
         {
           selectedRepos ? selectedRepos.map(({ id, name, color, enable }) => {
@@ -232,7 +231,7 @@ const PullRequests = ({ auth, selectedRepos, toggleSelectedRepo }) => {
             );
           }) : null
         }
-      </div>
+      </div> */}
       <div className='visualization-section'>
         <BarChart records={allSortedRecordsByLR} NOW={NOW} />
       </div>

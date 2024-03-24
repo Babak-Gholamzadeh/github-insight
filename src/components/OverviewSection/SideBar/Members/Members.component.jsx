@@ -53,7 +53,7 @@ const Members = ({
       <h3 className='section-title'>Members</h3>
       {
         forbidden
-          ? <div className='forbidden'>You don't have access to this part</div>
+          ? <div className='forbidden'>You don't have access to this section</div>
           : <div>
             <div className='member-list' >
               {list.slice(0, 20).map(({ id, html_url, avatar_url, title }) =>

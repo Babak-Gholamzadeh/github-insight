@@ -64,7 +64,7 @@ const Teams = ({
       <h3 className='section-title'>Teams</h3>
       {
         forbidden
-          ? <div className='forbidden'>You don't have access to this part</div>
+          ? <div className='forbidden'>You don't have access to this section</div>
           : <div className='team-list'>
             {list.map(({ id, avatar_url, name, html_url, numberOfMembers }) =>
               <div className="team-item" key={id}>

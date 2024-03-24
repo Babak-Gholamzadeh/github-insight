@@ -10,6 +10,9 @@
   background-color: #238636;
   border: 3px solid #238636;
   color: #f1f7f2;
+  transition: border-color .1s;
+  transition: background-color .1s;
+  transition: color .1s;
 
   &:hover {
     background-color: #2ea043;

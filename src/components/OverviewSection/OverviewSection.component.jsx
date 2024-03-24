@@ -3,13 +3,18 @@ import SideBar from './SideBar/SideBar.component';
 
 import './OverviewSection.style.scss';
 
-const OverviewSection = ({ auth, addRepo }) => {
+const OverviewSection = ({ auth, selectedRepos, addRepo, removeRepo }) => {
   console.log('OverviewSection > auth:', auth);
   const { owner, ownerType, token } = auth;
   if (!owner || !ownerType || !token) return;
   return (
     <div className='overview-section'>
-      <Repositories auth={auth} addRepo={addRepo} />
+      <Repositories
+        auth={auth}
+        selectedRepos={selectedRepos}
+        addRepo={addRepo}
+        removeRepo={removeRepo}
+      />
       {auth.ownerType === 'organization' ? <SideBar auth={auth} /> : null}
     </div>
   );
