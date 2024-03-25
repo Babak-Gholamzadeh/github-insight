@@ -17,6 +17,11 @@ const HomePage = () => {
     token: '',
   });
 
+  const [loadPRsReq, submitLoadPRs] = useState({
+    repos: [],
+    maxNumberOfPRs: 0,
+  });
+
   const [selectedRepos, selectRepo] = useState([]);
 
   const addRepo = repo => {
@@ -49,10 +54,21 @@ const HomePage = () => {
   return (
     <div className="page-container home-page">
       <h1 className="page-title">GitHub Insight</h1>
-      <GitHubAPIAuthentication auth={auth} setAuth={setAuth} />
-      <OverviewSection auth={auth} selectedRepos={selectedRepos} addRepo={addRepo} removeRepo={removeRepo} />
-      <SelectedRepositories selectedRepos={selectedRepos} removeRepo={removeRepo} />
-      <PullRequests auth={auth} selectedRepos={selectedRepos} />
+      <GitHubAPIAuthentication
+        auth={auth}
+        setAuth={setAuth} />
+      <OverviewSection
+        auth={auth}
+        selectedRepos={selectedRepos}
+        addRepo={addRepo}
+        removeRepo={removeRepo} />
+      <SelectedRepositories
+        selectedRepos={selectedRepos}
+        removeRepo={removeRepo}
+        submitLoadPRs={submitLoadPRs} />
+      <PullRequests
+        auth={auth}
+        loadPRsReq={loadPRsReq} />
     </div>
   );
 };

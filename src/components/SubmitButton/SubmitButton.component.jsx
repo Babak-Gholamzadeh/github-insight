@@ -1,12 +1,14 @@
 import './SubmitButton.style.scss';
 
-const SubmitButton = ({ children, disabled, status }) => {
+const SubmitButton = ({ children, disabled, status, rest }) => {
   return (
     <button className={
       'submit-button' +
       (disabled ? ' disabled' : '') +
       ` ${status}`
-    } type='submit'>
+    } type='submit'
+      {...rest}
+    >
       {children}
     </button>
   );

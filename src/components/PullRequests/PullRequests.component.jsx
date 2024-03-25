@@ -8,7 +8,7 @@ import { log } from '../../utils';
 
 import './PullRequests.style.scss';
 
-const RECORDS_PER_PAGE = 20;
+const MAX_NUM_OF_RECORDS_PER_PAGE = 20;
 
 let sortedRecordsByLR = [];
 let sortedRecordsByCA = [];
@@ -18,24 +18,30 @@ let globalFetchDataExecutionId = 0;
 const fetchAllPullRequests = async (
   now,
   { owner, token },
-  repos,
+  loadPRsReq,
   setTotalFecthedRecords,
   updateFetchingDataProgress,
 ) => {
   if (!owner || !token) return;
 
   const localFetchDataExecutionId = globalFetchDataExecutionId = Math.floor(Math.random() * 100);
-  log({ startFetchingData: localFetchDataExecutionId });
+  // log({ startFetchingData: localFetchDataExecutionId });
 
   sortedRecordsByLR = [];
   sortedRecordsByCA = [];
 
   let numberOfTOtalRecords = 0;
   let numberOfFecthedRecord = 0;
-  repos = repos.filter(({ enable }) => enable);
+
+  if (!loadPRsReq.maxNumberOfPRs) {
+    setTotalFecthedRecords(0);
+  }
+
+  let repos = JSON.parse(JSON.stringify(loadPRsReq.repos)); //.filter(({ enable }) => enable);
+
   repos.forEach(repo => {
     repo.currPage = 1;
-    repo.lastPage = Math.ceil(repo.numberOfPRs / RECORDS_PER_PAGE);
+    repo.lastPage = Math.ceil(repo.numberOfPRs / MAX_NUM_OF_RECORDS_PER_PAGE);
     numberOfTOtalRecords += repo.numberOfPRs;
   });
 
@@ -43,13 +49,17 @@ const fetchAllPullRequests = async (
     setTotalFecthedRecords(0);
   }
 
-  log({ reposLen: repos.length });
+  // log({ reposLen: repos.length });
 
   try {
     let i = 0;
-    while (repos.length && i++ < 10) {
+    while (repos.length && numberOfFecthedRecord < loadPRsReq.maxNumberOfPRs && i++ < 100) {
       for (const { currPage, name, color } of repos) {
-        const url = `https://api.github.com/repos/${owner}/${name}/pulls?state=all&per_page=${RECORDS_PER_PAGE}&page=${currPage}`;
+        const numOfRecordsPerPage = Math.min(
+          loadPRsReq.maxNumberOfPRs - numberOfFecthedRecord,
+          MAX_NUM_OF_RECORDS_PER_PAGE,
+        );
+        const url = `https://api.github.com/repos/${owner}/${name}/pulls?state=all&per_page=${numOfRecordsPerPage}&page=${currPage}`;
         let response;
         try {
           response = await axios.get(url, {
@@ -62,6 +72,7 @@ const fetchAllPullRequests = async (
             return;
           }
         } catch (err) {
+          // @TODO: do something with this error
           console.log('near err:', err);
           throw err;
         }
@@ -112,7 +123,10 @@ const fetchAllPullRequests = async (
 
         // Update progress bar
         numberOfFecthedRecord += recordsPerPage.length;
-        updateFetchingDataProgress(numberOfFecthedRecord, numberOfTOtalRecords);
+        updateFetchingDataProgress(numberOfFecthedRecord, loadPRsReq.maxNumberOfPRs);
+
+        if(numberOfFecthedRecord >= loadPRsReq.maxNumberOfPRs)
+          break;
       }
 
       repos = repos
@@ -138,7 +152,7 @@ const PullRequestList = ({ records }) => {
   );
 };
 
-const PullRequests = ({ auth, selectedRepos }) => {
+const PullRequests = ({ auth, loadPRsReq }) => {
   const [NOW, setNOW] = useState(0);
   const [progress, setProgress] = useState(0);
   // console.log('PullRequests Component');
@@ -155,14 +169,16 @@ const PullRequests = ({ auth, selectedRepos }) => {
     perPage: 10,
   });
 
-  const fetchData = async (now, selectedRepos) => {
-    await fetchAllPullRequests(now, auth, selectedRepos, updatePageData, updateFetchingDataProgress);
+
+
+  const fetchData = async (now, loadPRsReq) => {
+    await fetchAllPullRequests(now, auth, loadPRsReq, updatePageData, updateFetchingDataProgress);
   };
   useEffect(() => {
     const now = Date.now();
-    fetchData(now, selectedRepos);
+    fetchData(now, loadPRsReq);
     setNOW(now);
-  }, [auth, selectedRepos]);
+  }, [auth, loadPRsReq]);
 
   const updatePageData = (totalFecthedRecords) => {
     const totalPages = Math.ceil(totalFecthedRecords / pagination.perPage);
@@ -215,6 +231,9 @@ const PullRequests = ({ auth, selectedRepos }) => {
   //   };
   // }, []);
   // console.log('offset:', offset);
+
+  if (!auth.owner || !auth.ownerType || !auth.token || !loadPRsReq?.maxNumberOfPRs)
+    return null;
 
   return (
     <div className="pull-requests">

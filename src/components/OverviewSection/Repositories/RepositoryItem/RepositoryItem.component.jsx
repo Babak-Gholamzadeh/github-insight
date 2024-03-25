@@ -19,10 +19,28 @@ const RepositoryItem = ({
   return (
     <div className="repo-item">
       <div
-        className='action-button'
-        onClick={() => selected ? removeRepo(id) : addRepo({ id, name, numberOfPRs: PRs.total })}
+        className={
+          'action-button' +
+          (() => {
+            if (PRs.total === 0)
+              return ' disabled';
+            return selected ? ' remove-button' : ' add-button';
+          })()
+        }
+        title={
+          (() => {
+            if (PRs.total === 0)
+              return 'This repo does not have any PR to display';
+            return selected ? 'Remove this repo from selected list' : 'Add this repo to the selected list';
+          })()
+        }
+        onClick={() => {
+          if (PRs.total === 0)
+            return null;
+          selected ? removeRepo(id) : addRepo({ id, name, numberOfPRs: PRs.total });
+        }}
       >
-        <img src={selected ? removeIcon : addIcon} alt="" />
+        {PRs.total === 0 ? null : <img src={selected ? removeIcon : addIcon} alt="" />}
       </div>
       <div className='repo-title'>
         <a

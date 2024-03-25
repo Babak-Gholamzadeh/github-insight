@@ -25,6 +25,7 @@ const GitHubAPIAuthentication = ({ auth, setAuth }) => {
     message: 'Access Token',
   });
   const [saveInfo, setSaveInfo] = useState(true);
+  const [checking, setChecking] = useState(false);
   const [submit, setSubmit] = useState({});
 
   useEffect(() => {
@@ -57,6 +58,8 @@ const GitHubAPIAuthentication = ({ auth, setAuth }) => {
   const onSubmit = async e => {
     e.preventDefault();
 
+    setChecking(true);
+
     const [ownerResponse, tokenResponse] = await Promise.allSettled([
       axios.get(`https://api.github.com/users/${owner}`),
       axios.get(`https://api.github.com/user/repos`, {
@@ -65,6 +68,9 @@ const GitHubAPIAuthentication = ({ auth, setAuth }) => {
         },
       }),
     ]);
+
+    await new Promise(res => setTimeout(res, 1000));
+
 
     console.log('ownerResponse.status:', ownerResponse.status);
     console.log('tokenResponse:', tokenResponse.status);
@@ -113,6 +119,8 @@ const GitHubAPIAuthentication = ({ auth, setAuth }) => {
       });
     }
 
+
+    setChecking(false);
     setSubmit({
       owner,
       ownerType,
@@ -185,6 +193,8 @@ const GitHubAPIAuthentication = ({ auth, setAuth }) => {
           disabled={!owner || !token}
           status={
             (() => {
+              if (checking)
+                return 'checking';
               if (ownerInputStatus.status === INPUT_STATUS.ERROR || tokenInputStatus.status === INPUT_STATUS.ERROR)
                 return INPUT_STATUS.ERROR;
               if (ownerInputStatus.status === INPUT_STATUS.SUCCESS && tokenInputStatus.status === INPUT_STATUS.SUCCESS)
@@ -193,9 +203,13 @@ const GitHubAPIAuthentication = ({ auth, setAuth }) => {
             })()
           }>
           {
-            ownerInputStatus.status === INPUT_STATUS.SUCCESS && tokenInputStatus.status === INPUT_STATUS.SUCCESS
-              ? 'Authorized'
-              : 'Authorize'
+            (() => {
+              if (checking)
+                return 'Checking...';
+              return ownerInputStatus.status === INPUT_STATUS.SUCCESS && tokenInputStatus.status === INPUT_STATUS.SUCCESS
+                ? 'Authorized'
+                : 'Authorize';
+            })()
           }
         </SubmitButton>
       </form >
