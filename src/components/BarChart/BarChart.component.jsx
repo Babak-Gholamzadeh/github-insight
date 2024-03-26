@@ -926,6 +926,21 @@ const BarChart = ({ NOW, records }) => {
 
     // PRs
     refPRs.current = scene.createObject(EmptyObject, {
+      update(dt) {
+        for (let i = 0, j = 0; i < this.objects.length; i++) {
+          const pr = this.objects[i];
+
+          if (!pr.loadRepo.enable) {
+            pr.enable = pr.visible = false;
+            continue;
+          }
+          pr.enable = pr.visible = true;
+          // pr.backgroundColor = pr.loadRepo.color;
+
+          pr.transform.position[0] = -(j * tracks.trackWidth + tracks.trackPadding);
+          j++;
+        }
+      },
       updatePRs(records) {
         log({ recordsLen: records.length });
 
@@ -935,15 +950,11 @@ const BarChart = ({ NOW, records }) => {
           const pr = this.createObject(Rect, {
             backgroundColor: `rgba(${PR_STATE_COLORS[record.state]})`,
             radius: 5,
-            // visible: false,
+            loadRepo: record.loadRepo,
             update(dt) {
               this.size = [
                 tracks.trackWidth - (tracks.trackPadding * 2),
                 record.longRunning * timeline.currMSHeight,
-              ];
-              this.transform.position = [
-                -(i * tracks.trackWidth + tracks.trackPadding),
-                0,
               ];
 
               if (this.onMouseHover()) {

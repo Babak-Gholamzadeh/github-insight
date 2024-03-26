@@ -167,7 +167,7 @@ class EngineEntity {
   }
 
   getObjectsByOrder(order) {
-    return this.objects
+    return [...this.objects]
       .sort((a, b) => {
         return (a[order] ?? 0) - (b[order] ?? 0);
       });

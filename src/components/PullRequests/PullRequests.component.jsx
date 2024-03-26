@@ -30,31 +30,31 @@ const fetchAllPullRequests = async (
   sortedRecordsByLR = [];
   sortedRecordsByCA = [];
 
-  let numberOfTOtalRecords = 0;
   let numberOfFecthedRecord = 0;
 
   if (!loadPRsReq.maxNumberOfPRs) {
     setTotalFecthedRecords(0);
   }
 
-  let repos = JSON.parse(JSON.stringify(loadPRsReq.repos)); //.filter(({ enable }) => enable);
+  let loadRepos = loadPRsReq.repos;
 
-  repos.forEach(repo => {
-    repo.currPage = 1;
-    repo.lastPage = Math.ceil(repo.numberOfPRs / MAX_NUM_OF_RECORDS_PER_PAGE);
-    numberOfTOtalRecords += repo.numberOfPRs;
+  loadRepos.forEach(loadRepo => {
+    loadRepo.currPage = 1;
+    loadRepo.lastPage = Math.ceil(loadRepo.numberOfPRs / MAX_NUM_OF_RECORDS_PER_PAGE);
   });
 
-  if (!repos.length) {
+  if (!loadRepos.length) {
     setTotalFecthedRecords(0);
   }
 
-  // log({ reposLen: repos.length });
+  // log({ reposLen: loadRepos.length });
 
   try {
     let i = 0;
-    while (repos.length && numberOfFecthedRecord < loadPRsReq.maxNumberOfPRs && i++ < 100) {
-      for (const { currPage, name, color } of repos) {
+    while (loadRepos.length && numberOfFecthedRecord < loadPRsReq.maxNumberOfPRs && i++ < 100) {
+      for (let r = 0; r < loadRepos.length && numberOfFecthedRecord < loadPRsReq.maxNumberOfPRs; r++) {
+        const loadRepo = loadRepos[r];
+        const { currPage, name } = loadRepo;
         const numOfRecordsPerPage = Math.min(
           loadPRsReq.maxNumberOfPRs - numberOfFecthedRecord,
           MAX_NUM_OF_RECORDS_PER_PAGE,
@@ -101,8 +101,8 @@ const fetchAllPullRequests = async (
           repo: {
             full_name: repo?.full_name || '',
             html_url: repo?.html_url || '',
-            color,
           },
+          loadRepo,
           longRunning: ((new Date(closed_at).getTime() || now) - new Date(created_at).getTime()),
           created_at,
           updated_at,
@@ -125,13 +125,13 @@ const fetchAllPullRequests = async (
         numberOfFecthedRecord += recordsPerPage.length;
         updateFetchingDataProgress(numberOfFecthedRecord, loadPRsReq.maxNumberOfPRs);
 
-        if(numberOfFecthedRecord >= loadPRsReq.maxNumberOfPRs)
+        loadRepo.currPage++;
+
+        if (numberOfFecthedRecord >= loadPRsReq.maxNumberOfPRs)
           break;
       }
 
-      repos = repos
-        .map(({ currPage, ...rest }) => ({ ...rest, currPage: currPage + 1, }))
-        .filter(({ currPage, lastPage }) => currPage <= lastPage);
+      loadRepos = loadRepos.filter(({ currPage, lastPage }) => currPage <= lastPage);
     }
   } catch (error) {
     console.error('Error fetching pull requests:', error.message);
@@ -169,14 +169,12 @@ const PullRequests = ({ auth, loadPRsReq }) => {
     perPage: 10,
   });
 
-
-
-  const fetchData = async (now, loadPRsReq) => {
+  const fetchData = async (now, auth, loadPRsReq) => {
     await fetchAllPullRequests(now, auth, loadPRsReq, updatePageData, updateFetchingDataProgress);
   };
   useEffect(() => {
     const now = Date.now();
-    fetchData(now, loadPRsReq);
+    fetchData(now, auth, loadPRsReq);
     setNOW(now);
   }, [auth, loadPRsReq]);
 
@@ -212,25 +210,6 @@ const PullRequests = ({ auth, loadPRsReq }) => {
     const endIndex = startIndex + pagination.perPage;
     setPaginatedRecords(sortedRecordsByLR.slice(startIndex, endIndex));
   };
-
-  // const makeSelectedRepoListSticky = e => {
-  //   const sticky = e.getBoundingClientRect();
-
-  // };
-  // const [offset, setOffset] = useState(0);
-  // const handleScroll = () => {
-  //   log({ here: 1 });
-  //   // Perform actions on scroll
-  // };
-  // useEffect(() => {
-  //   log({ useEffect: 1 });
-  //   window.addEventListener('scroll', handleScroll);
-  //   return () => {
-  //     log({ useEffect: 0 });
-  //     window.removeEventListener('scroll', handleScroll);
-  //   };
-  // }, []);
-  // console.log('offset:', offset);
 
   if (!auth.owner || !auth.ownerType || !auth.token || !loadPRsReq?.maxNumberOfPRs)
     return null;

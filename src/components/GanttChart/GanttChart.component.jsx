@@ -1100,6 +1100,23 @@ const GanttChart = ({ NOW, records }) => {
         },
       },
       update(dt) {
+        // log({ refPRsUpdate: dt });
+        this.trackOccupancy.empty();
+        for (let i = 0; i < this.objects.length; i++) {
+          const pr = this.objects[i];
+
+          if (!pr.loadRepo.enable) {
+            // pr.backgroundColor = 'gray';
+            pr.enable = pr.visible = false;
+            continue;
+          }
+          pr.enable = pr.visible = true;
+          // pr.backgroundColor = pr.loadRepo.color;
+
+          const trackIdx = this.trackOccupancy.registerInTrack(pr.x, pr.w);
+
+          pr.transform.position[1] = trackIdx * tracks.trackHeight + tracks.trackPadding;
+        }
       },
       updatePRs(records) {
         log({ recordsLen: records.length });
@@ -1119,30 +1136,38 @@ const GanttChart = ({ NOW, records }) => {
           const pr = this.createObject(Rect, {
             backgroundColor: `rgba(${PR_STATE_COLORS[record.state]})`,
             radius: 5,
-            // visible: false,
+            loadRepo: record.loadRepo,
+            x, w,
             update(dt) {
               this.size = [
                 w * timeline.currMSWidth,
                 tracks.trackHeight - (tracks.trackPadding * 2),
               ];
-              this.transform.position = [
-                x * timeline.currMSWidth,
-                trackIdx * tracks.trackHeight + tracks.trackPadding,
-              ];
+
+              this.transform.position[0] = x * timeline.currMSWidth;
+
+              // this.transform.position = [
+              //   x * timeline.currMSWidth,
+              //   trackIdx * tracks.trackHeight + tracks.trackPadding,
+              // ];
 
               if (this.onMouseHover()) {
-                const BGcolor = [...PR_STATE_COLORS[record.state]];
-                BGcolor[3] = 1;
-                this.backgroundColor = `rgba(${BGcolor})`;
+                // const BGcolor = [...PR_STATE_COLORS[record.state]];
+                // BGcolor[3] = 1;
+                // this.backgroundColor = `rgba(${BGcolor})`;
                 this.toolTip?.show();
               } else if (this.onMouseOut()) {
-                this.backgroundColor = `rgba(${PR_STATE_COLORS[record.state]})`;
+                // this.backgroundColor = `rgba(${PR_STATE_COLORS[record.state]})`;
                 this.toolTip?.hide();
               }
             },
           }, {
             tag: 'pr-child',
             renderOrder: records.length - trackIdx,
+            position: [
+              x * timeline.currMSWidth,
+              trackIdx * tracks.trackHeight + tracks.trackPadding,
+            ],
           });
           pr.userAvatar = pr.createObject(RectImage, {
             url: record.user.avatar_url,

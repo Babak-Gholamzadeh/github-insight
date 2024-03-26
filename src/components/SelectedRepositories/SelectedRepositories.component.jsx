@@ -21,19 +21,17 @@ const SelectedRepositories = ({ selectedRepos, removeRepo, submitLoadPRs }) => {
   };
 
   useEffect(() => {
-    // console.log('selectedRepos:', 1);
     setSelectedRepoStatus([
       ...selectedRepos,
     ]);
   }, [selectedRepos]);
 
   useEffect(() => {
-    const total = selectedRepoStatus?.reduce((acc, { numberOfPRs }) => acc + numberOfPRs, 0);
-    // console.log('selectedRepoStatus:', 2, total);
+    const total = selectedRepoStatus?.reduce((acc, { numberOfPRs }) => acc + numberOfPRs, 0) ?? 0;
     setTotalPRs(total);
     if (rangeValue > total)
       setRangeValue(Math.max(1, total));
-  }, [selectedRepoStatus]);
+  }, [selectedRepoStatus.length]);
 
   const onSubmit = e => {
     e.preventDefault();
@@ -51,10 +49,11 @@ const SelectedRepositories = ({ selectedRepos, removeRepo, submitLoadPRs }) => {
             return (
               <div key={id}
                 className={'selected-repo-item' + (enable ? '' : ' disabled')}
+                title='Disabling it only hides its PRs, but still fetch the data'
                 onClick={() => toggleSelectedRepo(id)}>
                 <div className='selected-repo-item-name'>{`${name} (${addCommas(numberOfPRs)})`}</div>
                 <div className='selected-repo-item-color' style={{ backgroundColor: color, borderColor: color }}></div>
-                <div className='remove-repo' onClick={() => removeRepo(id)}>
+                <div className='remove-repo' onClick={() => removeRepo(id)} title='Remove it from the list to avoid fetching the PRs'>
                   <img src={removeIcon} alt="" />
                 </div>
               </div>
