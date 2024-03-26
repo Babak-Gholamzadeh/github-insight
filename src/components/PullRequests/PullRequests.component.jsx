@@ -19,7 +19,7 @@ const fetchAllPullRequests = async (
   now,
   { owner, token },
   loadPRsReq,
-  setTotalFecthedRecords,
+  setFecthedRecords,
   updateFetchingDataProgress,
 ) => {
   if (!owner || !token) return;
@@ -33,7 +33,7 @@ const fetchAllPullRequests = async (
   let numberOfFecthedRecord = 0;
 
   if (!loadPRsReq.maxNumberOfPRs) {
-    setTotalFecthedRecords(0);
+    setFecthedRecords(0);
   }
 
   let loadRepos = loadPRsReq.repos;
@@ -44,7 +44,7 @@ const fetchAllPullRequests = async (
   });
 
   if (!loadRepos.length) {
-    setTotalFecthedRecords(0);
+    setFecthedRecords(0);
   }
 
   // log({ reposLen: loadRepos.length });
@@ -55,11 +55,8 @@ const fetchAllPullRequests = async (
       for (let r = 0; r < loadRepos.length && numberOfFecthedRecord < loadPRsReq.maxNumberOfPRs; r++) {
         const loadRepo = loadRepos[r];
         const { currPage, name } = loadRepo;
-        const numOfRecordsPerPage = Math.min(
-          loadPRsReq.maxNumberOfPRs - numberOfFecthedRecord,
-          MAX_NUM_OF_RECORDS_PER_PAGE,
-        );
-        const url = `https://api.github.com/repos/${owner}/${name}/pulls?state=all&per_page=${numOfRecordsPerPage}&page=${currPage}`;
+
+        const url = `https://api.github.com/repos/${owner}/${name}/pulls?state=all&per_page=${MAX_NUM_OF_RECORDS_PER_PAGE}&page=${currPage}`;
         let response;
         try {
           response = await axios.get(url, {
@@ -76,7 +73,13 @@ const fetchAllPullRequests = async (
           console.log('near err:', err);
           throw err;
         }
-        const recordsPerPage = response.data.map(({
+
+        const numOfRecordsPerCurrPage = Math.min(
+          loadPRsReq.maxNumberOfPRs - numberOfFecthedRecord,
+          MAX_NUM_OF_RECORDS_PER_PAGE,
+        );
+
+        const recordsPerPage = response.data.slice(0, numOfRecordsPerCurrPage).map(({
           id,
           state,
           title,
@@ -109,6 +112,8 @@ const fetchAllPullRequests = async (
           closed_at,
         }));
 
+        // log({ recordsPerPageNum: recordsPerPage.map(({ id }) => id) });
+
         // Sorted by Long-Running
         sortedRecordsByLR.push(...recordsPerPage);
         sortedRecordsByLR.sort((a, b) => b.longRunning - a.longRunning);
@@ -119,7 +124,7 @@ const fetchAllPullRequests = async (
           const diff2 = new Date(b.closed_at).getTime() || Date.now();
           return diff2 - diff1;
         });
-        setTotalFecthedRecords(sortedRecordsByLR.length);
+        setFecthedRecords(sortedRecordsByLR.length);
 
         // Update progress bar
         numberOfFecthedRecord += recordsPerPage.length;
@@ -133,21 +138,19 @@ const fetchAllPullRequests = async (
 
       loadRepos = loadRepos.filter(({ currPage, lastPage }) => currPage <= lastPage);
     }
+    // log({ sortedRecordsByLRNum: sortedRecordsByLR.map(({ id }) => id) });
   } catch (error) {
     console.error('Error fetching pull requests:', error.message);
-    setTotalFecthedRecords(0);
+    setFecthedRecords(0);
     updateFetchingDataProgress(0, 0);
     return 404;
   }
 };
 
 const PullRequestList = ({ records }) => {
-  const noItem = <div className="no-item">There is nothing here!</div>;
-  const items = records?.map(({ id, ...rest }) => <PullRequestItem {...rest} key={id} />);
-
   return (
     <div className='pr-list'>
-      {items || noItem}
+      {records?.map(({ id, ...rest }) => <PullRequestItem {...rest} key={id} />)}
     </div>
   );
 };
@@ -158,6 +161,7 @@ const PullRequests = ({ auth, loadPRsReq }) => {
   // console.log('PullRequests Component');
 
   const [paginatedRecords, setPaginatedRecords] = useState([]);
+  const [allSortedPaginationRecordsByLR, setAllSortedPaginationRecordsByLR] = useState([]);
   const [allSortedRecordsByLR, setAllSortedRecordsByLR] = useState([]);
   const [allSortedRecordsByCA, setAllSortedRecordsByCA] = useState([]);
   const [pagination, setPagination] = useState({
@@ -170,7 +174,7 @@ const PullRequests = ({ auth, loadPRsReq }) => {
   });
 
   const fetchData = async (now, auth, loadPRsReq) => {
-    await fetchAllPullRequests(now, auth, loadPRsReq, updatePageData, updateFetchingDataProgress);
+    await fetchAllPullRequests(now, auth, loadPRsReq, setFecthedRecords, updateFetchingDataProgress);
   };
   useEffect(() => {
     const now = Date.now();
@@ -178,17 +182,8 @@ const PullRequests = ({ auth, loadPRsReq }) => {
     setNOW(now);
   }, [auth, loadPRsReq]);
 
-  const updatePageData = (totalFecthedRecords) => {
-    const totalPages = Math.ceil(totalFecthedRecords / pagination.perPage);
-    setPagination({
-      ...pagination,
-      last: totalPages,
-      next: totalPages > 1 ? 2 : 1,
-    });
-
-    const startIndex = (pagination.curr - 1) * pagination.perPage;
-    const endIndex = startIndex + pagination.perPage;
-    setPaginatedRecords(sortedRecordsByLR.slice(startIndex, endIndex));
+  const setFecthedRecords = () => {
+    setAllSortedPaginationRecordsByLR([...sortedRecordsByLR]);
     setAllSortedRecordsByLR([...sortedRecordsByLR]);
     setAllSortedRecordsByCA([...sortedRecordsByCA]);
   };
@@ -198,7 +193,42 @@ const PullRequests = ({ auth, loadPRsReq }) => {
     setProgress(numberOfFecthedRecord * 100 / numberOfTOtalRecords);
   };
 
+  useEffect(() => {
+    let prevLength = 0;
+    const tId = setInterval(() => {
+      const visibleRecords = allSortedPaginationRecordsByLR.filter(({ loadRepo: { enable } }) => enable);
+      const totalVisibleRecords = visibleRecords.length;
+      // log({ totalVisibleRecords, prevLength, paginatedRecords: paginatedRecords.length });
+      if (totalVisibleRecords === prevLength)
+        return;
+
+      const totalPages = Math.ceil(totalVisibleRecords / pagination.perPage);
+      setPagination({
+        ...pagination,
+        last: totalPages,
+        next: totalPages > 1 ? 2 : 1,
+      });
+
+      const startIndex = (pagination.curr - 1) * pagination.perPage;
+      const endIndex = startIndex + pagination.perPage;
+      // log({ startIndex, endIndex });
+
+      setPaginatedRecords(visibleRecords.slice(startIndex, endIndex));
+      // log({ visibleRecords1: visibleRecords.map(({ id }) => id) });
+      prevLength = totalVisibleRecords;
+    }, 100);
+
+    return () => clearInterval(tId);
+  }, [allSortedPaginationRecordsByLR]);
+
   const changePage = pageNumber => {
+    // log({ pageNumber });
+
+    if (pageNumber === pagination.curr) return;
+
+    const visibleRecords = allSortedPaginationRecordsByLR.filter(({ loadRepo: { enable } }) => enable);
+    // log({ visibleRecords2: visibleRecords.map(({ id }) => id) });
+
     setPagination({
       ...pagination,
       curr: pageNumber,
@@ -206,9 +236,10 @@ const PullRequests = ({ auth, loadPRsReq }) => {
       next: pageNumber + 1,
     });
 
-    const startIndex = pageNumber * pagination.perPage;
+    const startIndex = (pageNumber - 1) * pagination.perPage;
     const endIndex = startIndex + pagination.perPage;
-    setPaginatedRecords(sortedRecordsByLR.slice(startIndex, endIndex));
+    // log({ startIndex2: startIndex, endIndex2: endIndex });
+    setPaginatedRecords(visibleRecords.slice(startIndex, endIndex));
   };
 
   if (!auth.owner || !auth.ownerType || !auth.token || !loadPRsReq?.maxNumberOfPRs)
@@ -240,7 +271,7 @@ const PullRequests = ({ auth, loadPRsReq }) => {
         <PullRequestList records={paginatedRecords} />
         <ListPagination pagination={pagination} changePage={changePage} />
       </div>
-    </div >
+    </div>
   );
 };
 

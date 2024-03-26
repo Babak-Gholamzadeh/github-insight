@@ -1,3 +1,9 @@
++ hide the PRs data when the repo gets disabled on bar chart
++ hide the PRs data when the repo gets disabled on gantt chart
++ hide the PRs data when the repo gets disabled on PRs table
++ load disabled repos, but avoid to display them
++ Fix the pagination in PRs table
+
 - It's also nice to give the user the ability to collapse the auth section, but only if it's already authorized.
 
 - and show 'there is no team/member' for 404 error.
@@ -10,13 +16,7 @@
 
 - There should be a button in that list to 'start fetching the data' and after clicking on that, changing on the list should be disabled and the button gets changed to 'stop the fetching of the data' and after clicking on this one, should keep the fecthed data and display it and also let the user to manipulate the list but still shows the progess bar of the fetched data. (Or it should be 'pause' and 'stop'?)
 
-+ hide the PRs data when the repo gets disabled on bar chart
-+ hide the PRs data when the repo gets disabled on gantt chart
-- hide the PRs data when the repo gets disabled on PRs table
-
 - Show loading somewhere when change the page in repository table
-
-+ load disabled repos, but avoid to display them
 
 - filter out the PRs by their status
 
@@ -35,8 +35,6 @@
 - Make the inititial zooming on both charts to fit all the avaliable data both vertically and horizantolly
 
 - Show the PRs in the charts somehow related to their repo
-
-- Fix the pagination in PRs table
 
 - Fix X scroll in chrome
 
