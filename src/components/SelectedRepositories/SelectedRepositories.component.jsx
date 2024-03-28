@@ -2,13 +2,38 @@ import { useEffect, useState } from 'react';
 import removeIcon from '../../assets/images/close-sm-svgrepo-com.svg';
 import SubmitButton from '../SubmitButton/SubmitButton.component';
 import { addCommas } from '../../utils';
+import { log } from '../../utils';
 
 import './SelectedRepositories.style.scss';
+
+const RANGE_DEFAULT_VALUE = 100;
 
 const SelectedRepositories = ({ selectedRepos, removeRepo, submitLoadPRs }) => {
   const [selectedRepoStatus, setSelectedRepoStatus] = useState(selectedRepos);
   const [totalPRs, setTotalPRs] = useState(0);
-  const [rangeValue, setRangeValue] = useState(100);
+  const [rangeValue, setRangeValue] = useState(RANGE_DEFAULT_VALUE);
+  const [filterStatus, setFilterStatus] = useState({
+    open: true,
+    draft: true,
+    merged: true,
+    closed: true,
+  });
+  const [prColor, setPRColor] = useState({
+    colorFromRepo: false,
+  });
+  const [submitObject, setSubmitObject] = useState({
+    repos: [],
+    maxNumberOfPRs: 0,
+    filterStatus: {
+      open: true,
+      draft: true,
+      merged: true,
+      closed: true,
+    },
+    prColor: {
+      colorFromRepo: false,
+    },
+  });
 
   const toggleSelectedRepo = repoId => {
     const repo = selectedRepoStatus.find(({ id }) => id === repoId);
@@ -27,17 +52,44 @@ const SelectedRepositories = ({ selectedRepos, removeRepo, submitLoadPRs }) => {
   }, [selectedRepos]);
 
   useEffect(() => {
-    const total = selectedRepoStatus?.reduce((acc, { numberOfPRs }) => acc + numberOfPRs, 0) ?? 0;
+    const total = selectedRepoStatus
+      ?.reduce((acc, { numberOfPRs }) => acc + numberOfPRs, 0) ?? 0;
+    if (totalPRs === 0 && total > 0) {
+      setRangeValue(Math.min(RANGE_DEFAULT_VALUE, total));
+    }
     setTotalPRs(total);
     if (rangeValue > total)
       setRangeValue(Math.max(1, total));
   }, [selectedRepoStatus.length]);
 
+  const onChangeFilterStatus = e => {
+    const name = e.currentTarget.getAttribute('name');
+    const newValue = !filterStatus[name];
+    // log({ [name]: newValue });
+    submitObject.filterStatus[name] = newValue;
+    setFilterStatus({
+      ...filterStatus,
+      [name]: newValue,
+    });
+  };
+
+  const onChangeColorFromRepo = value => {
+    submitObject.prColor.colorFromRepo = value;
+    setPRColor({ colorFromRepo: value });
+  };
+
+  useEffect(() => {
+    submitLoadPRs(submitObject);
+  }, [submitObject]);
+
   const onSubmit = e => {
     e.preventDefault();
-    submitLoadPRs({
+
+    setSubmitObject({
       repos: [...selectedRepoStatus],
       maxNumberOfPRs: rangeValue,
+      filterStatus,
+      prColor,
     });
   };
 
@@ -73,6 +125,41 @@ const SelectedRepositories = ({ selectedRepos, removeRepo, submitLoadPRs }) => {
           {`Load ${addCommas(rangeValue)} PR${rangeValue === '1' ? '' : 's'}`}
         </SubmitButton>
       </form>
+      <div className='pr-status-filter'>
+        <label>Filter PRs by status:</label>
+        <div
+          name='open'
+          className={'pr-status-filter-item status-open' + (filterStatus.open ? '' : ' disabled')}
+          onClick={onChangeFilterStatus}>
+          Open
+        </div>
+        <div
+          name='draft'
+          className={'pr-status-filter-item status-draft' + (filterStatus.draft ? '' : ' disabled')}
+          onClick={onChangeFilterStatus}>
+          Draft
+        </div>
+        <div
+          name='merged'
+          className={'pr-status-filter-item status-merged' + (filterStatus.merged ? '' : ' disabled')}
+          onClick={onChangeFilterStatus}>
+          Merged
+        </div>
+        <div
+          name='closed'
+          className={'pr-status-filter-item status-closed' + (filterStatus.closed ? '' : ' disabled')}
+          onClick={onChangeFilterStatus}>
+          Closed
+        </div>
+      </div>
+      <div className='pr-colors'>
+        <div className={'pr-colors-item' + (!prColor.colorFromRepo ? ' selected' : '')} onClick={() => onChangeColorFromRepo(false)}>
+          Show the PR colors based ont their status
+        </div>
+        <div className={'pr-colors-item' + (prColor.colorFromRepo ? ' selected' : '')} onClick={() => onChangeColorFromRepo(true)}>
+          Show repo colors on the PRs
+        </div>
+      </div>
     </div>
   );
 };

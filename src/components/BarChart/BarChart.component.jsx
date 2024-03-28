@@ -930,12 +930,15 @@ const BarChart = ({ NOW, records }) => {
         for (let i = 0, j = 0; i < this.objects.length; i++) {
           const pr = this.objects[i];
 
-          if (!pr.loadRepo.enable) {
+          if (!pr.loadRepo.enable || !pr.filterStatus[pr.state]) {
             pr.enable = pr.visible = false;
             continue;
           }
           pr.enable = pr.visible = true;
-          // pr.backgroundColor = pr.loadRepo.color;
+          const PRBGC = pr.prColor.colorFromRepo
+            ? pr.loadRepo.color
+            : `rgba(${PR_STATE_COLORS[pr.state]})`;
+          pr.backgroundColor = PRBGC;
 
           pr.transform.position[0] = -(j * tracks.trackWidth + tracks.trackPadding);
           j++;
@@ -947,10 +950,16 @@ const BarChart = ({ NOW, records }) => {
         this.objects = [];
 
         records.forEach((record, i) => {
+          const PRBGC = record.prColor.colorFromRepo
+            ? record.loadRepo.color
+            : `rgba(${PR_STATE_COLORS[record.state]})`;
           const pr = this.createObject(Rect, {
-            backgroundColor: `rgba(${PR_STATE_COLORS[record.state]})`,
+            backgroundColor: PRBGC,
             radius: 5,
             loadRepo: record.loadRepo,
+            prColor: record.prColor,
+            filterStatus: record.filterStatus,
+            state: record.state,
             update(dt) {
               this.size = [
                 tracks.trackWidth - (tracks.trackPadding * 2),
@@ -958,12 +967,12 @@ const BarChart = ({ NOW, records }) => {
               ];
 
               if (this.onMouseHover()) {
-                const BGcolor = [...PR_STATE_COLORS[record.state]];
-                BGcolor[3] = 1;
-                this.backgroundColor = `rgba(${BGcolor})`;
+                // const BGcolor = [...PR_STATE_COLORS[record.state]];
+                // BGcolor[3] = 1;
+                // this.backgroundColor = `rgba(${BGcolor})`;
                 this.toolTip?.show();
               } else if (this.onMouseOut()) {
-                this.backgroundColor = `rgba(${PR_STATE_COLORS[record.state]})`;
+                // this.backgroundColor = `rgba(${PR_STATE_COLORS[record.state]})`;
                 this.toolTip?.hide();
               }
             },

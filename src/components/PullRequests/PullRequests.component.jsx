@@ -106,6 +106,8 @@ const fetchAllPullRequests = async (
             html_url: repo?.html_url || '',
           },
           loadRepo,
+          filterStatus: loadPRsReq.filterStatus,
+          prColor: loadPRsReq.prColor,
           longRunning: ((new Date(closed_at).getTime() || now) - new Date(created_at).getTime()),
           created_at,
           updated_at,
@@ -173,12 +175,15 @@ const PullRequests = ({ auth, loadPRsReq }) => {
     perPage: 10,
   });
 
-  const fetchData = async (now, auth, loadPRsReq) => {
-    await fetchAllPullRequests(now, auth, loadPRsReq, setFecthedRecords, updateFetchingDataProgress);
-  };
   useEffect(() => {
     const now = Date.now();
-    fetchData(now, auth, loadPRsReq);
+    fetchAllPullRequests(
+      now,
+      auth,
+      loadPRsReq,
+      setFecthedRecords,
+      updateFetchingDataProgress,
+    );
     setNOW(now);
   }, [auth, loadPRsReq]);
 
@@ -196,7 +201,8 @@ const PullRequests = ({ auth, loadPRsReq }) => {
   useEffect(() => {
     let prevLength = 0;
     const tId = setInterval(() => {
-      const visibleRecords = allSortedPaginationRecordsByLR.filter(({ loadRepo: { enable } }) => enable);
+      const visibleRecords = allSortedPaginationRecordsByLR
+        .filter(({ loadRepo: { enable } }) => enable);
       const totalVisibleRecords = visibleRecords.length;
       // log({ totalVisibleRecords, prevLength, paginatedRecords: paginatedRecords.length });
       if (totalVisibleRecords === prevLength)
@@ -226,7 +232,8 @@ const PullRequests = ({ auth, loadPRsReq }) => {
 
     if (pageNumber === pagination.curr) return;
 
-    const visibleRecords = allSortedPaginationRecordsByLR.filter(({ loadRepo: { enable } }) => enable);
+    const visibleRecords = allSortedPaginationRecordsByLR
+      .filter(({ loadRepo: { enable } }) => enable);
     // log({ visibleRecords2: visibleRecords.map(({ id }) => id) });
 
     setPagination({
