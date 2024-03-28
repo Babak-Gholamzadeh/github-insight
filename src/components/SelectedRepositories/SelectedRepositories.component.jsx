@@ -65,7 +65,6 @@ const SelectedRepositories = ({ selectedRepos, removeRepo, submitLoadPRs }) => {
   const onChangeFilterStatus = e => {
     const name = e.currentTarget.getAttribute('name');
     const newValue = !filterStatus[name];
-    // log({ [name]: newValue });
     submitObject.filterStatus[name] = newValue;
     setFilterStatus({
       ...filterStatus,

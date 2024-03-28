@@ -1105,13 +1105,15 @@ const GanttChart = ({ NOW, records }) => {
         for (let i = 0; i < this.objects.length; i++) {
           const pr = this.objects[i];
 
-          if (!pr.loadRepo.enable) {
-            // pr.backgroundColor = 'gray';
+          if (!pr.loadRepo.enable || !pr.filterStatus[pr.state]) {
             pr.enable = pr.visible = false;
             continue;
           }
           pr.enable = pr.visible = true;
-          // pr.backgroundColor = pr.loadRepo.color;
+          const PRBGC = pr.prColor.colorFromRepo
+            ? pr.loadRepo.color
+            : `rgba(${PR_STATE_COLORS[pr.state]})`;
+          pr.backgroundColor = PRBGC;
 
           const trackIdx = this.trackOccupancy.registerInTrack(pr.x, pr.w);
 
@@ -1137,6 +1139,9 @@ const GanttChart = ({ NOW, records }) => {
             backgroundColor: `rgba(${PR_STATE_COLORS[record.state]})`,
             radius: 5,
             loadRepo: record.loadRepo,
+            prColor: record.prColor,
+            filterStatus: record.filterStatus,
+            state: record.state,
             x, w,
             update(dt) {
               this.size = [
