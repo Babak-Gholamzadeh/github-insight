@@ -4,13 +4,26 @@
   display: flex;
   justify-content: space-between;
   border-bottom: 1px solid #21262d;
+  position: relative;
 
   &:hover {
     background-color: #161b22;
+    .pr-repo-color {
+      width: 5px;
+    }
   }
 
   &:last-child {
     border: none;
+  }
+
+  .pr-repo-color {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    transition: width .3s;
   }
 
   .pr-title {

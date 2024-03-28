@@ -15,12 +15,14 @@ const PullRequestItem = ({
   html_url,
   user,
   repo,
+  loadRepo,
   longRunning,
   created_at,
   closed_at,
 }) => {
   return (
-    <div className="pr-item">
+    <div className='pr-item'>
+      <div className='pr-repo-color' style={{ backgroundColor: loadRepo.color }}></div>
       <div className='pr-title'>
         <div className='top-section'>
           <img src={
@@ -40,9 +42,9 @@ const PullRequestItem = ({
           } title={state} className='pr-state' alt='' />
           <a
             href={html_url}
-            className="pr-link"
-            target="_blank"
-            rel="noreferrer"
+            className='pr-link'
+            target='_blank'
+            rel='noreferrer'
           >
             {title}
           </a>
@@ -50,9 +52,9 @@ const PullRequestItem = ({
         <div className='bottom-section'>
           <a
             href={repo.html_url}
-            className="pr-repo-link"
-            target="_blank"
-            rel="noreferrer"
+            className='pr-repo-link'
+            target='_blank'
+            rel='noreferrer'
           >
             {repo.full_name}
           </a>
@@ -64,9 +66,9 @@ const PullRequestItem = ({
       </div>
       <a
         href={user.html_url}
-        className="pr-member-link"
-        target="_blank"
-        rel="noreferrer"
+        className='pr-member-link'
+        target='_blank'
+        rel='noreferrer'
         title={user.name}
       >
         <img src={user.avatar_url} className='pr-member-avatar' alt='' />

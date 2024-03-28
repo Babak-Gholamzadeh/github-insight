@@ -202,7 +202,9 @@ const PullRequests = ({ auth, loadPRsReq }) => {
     let prevLength = 0;
     const tId = setInterval(() => {
       const visibleRecords = allSortedPaginationRecordsByLR
-        .filter(({ loadRepo: { enable } }) => enable);
+        .filter(({ loadRepo: { enable }, state, filterStatus }) =>
+          enable && filterStatus[state]
+        );
       const totalVisibleRecords = visibleRecords.length;
       // log({ totalVisibleRecords, prevLength, paginatedRecords: paginatedRecords.length });
       if (totalVisibleRecords === prevLength)
@@ -233,7 +235,9 @@ const PullRequests = ({ auth, loadPRsReq }) => {
     if (pageNumber === pagination.curr) return;
 
     const visibleRecords = allSortedPaginationRecordsByLR
-      .filter(({ loadRepo: { enable } }) => enable);
+      .filter(({ loadRepo: { enable }, state, filterStatus }) =>
+        enable && filterStatus[state]
+      );
     // log({ visibleRecords2: visibleRecords.map(({ id }) => id) });
 
     setPagination({
