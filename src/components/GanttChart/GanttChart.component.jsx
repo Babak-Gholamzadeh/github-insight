@@ -159,7 +159,7 @@ const GanttChart = ({ NOW, records }) => {
 
     // FPS
     camera.createObject(Text, {
-      color: 'rgba(255, 255, 255, .7)',
+      color: 'rgba(255, 255, 255, .6)',
       size: 12,
       frameCount: 0,
       sumDt: 0,
@@ -177,8 +177,8 @@ const GanttChart = ({ NOW, records }) => {
     }, {
       tag: 'fps',
       position: [
-        -camera.getSize()[0] / 2,
-        camera.getSize()[1] / 2 - 10,
+        -camera.getSize()[0] / 2 + 2,
+        camera.getSize()[1] / 2 - 12,
       ],
     });
 

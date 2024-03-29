@@ -2,15 +2,11 @@
 
 - Show loading somewhere when change the page in repository table
 
-- filter out the PRs by their status
-
-- PRs color switch between repo color and pr status
-
-- Show the PRs in the charts somehow related to their repo
-
 - Show the keyboard shortcuts somewhere on each canvas
 
 ----------------
+
+- Add a pre-defined of 100 colors for the repo list and limit it to 100 repo
 
 - Maybe the ability to search a repo by its name?
 
@@ -35,3 +31,7 @@
 - and show 'there is no team/member' for 404 error.
 
 - fix the number of time slice in bar chart to start from 1 instead of 0
+
+- fix token expiration time (undefined)
+
+- fix null users for owner

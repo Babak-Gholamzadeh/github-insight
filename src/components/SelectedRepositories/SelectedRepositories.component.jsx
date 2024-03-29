@@ -7,6 +7,12 @@ import { log } from '../../utils';
 import './SelectedRepositories.style.scss';
 
 const RANGE_DEFAULT_VALUE = 100;
+const LOAD_STATE = {
+  NEEDS_TO_LOAD: 0,
+  LOADING: 1,
+  PAUSED: 2,
+  COMPLETED: 3,
+};
 
 const SelectedRepositories = ({ selectedRepos, removeRepo, submitLoadPRs }) => {
   const [selectedRepoStatus, setSelectedRepoStatus] = useState(selectedRepos);
@@ -21,6 +27,7 @@ const SelectedRepositories = ({ selectedRepos, removeRepo, submitLoadPRs }) => {
   const [prColor, setPRColor] = useState({
     colorFromRepo: false,
   });
+  const [numberOfLoadedPRs, setNumberOfLoadedPRs] = useState(0);
   const [submitObject, setSubmitObject] = useState({
     repos: [],
     maxNumberOfPRs: 0,
@@ -33,7 +40,35 @@ const SelectedRepositories = ({ selectedRepos, removeRepo, submitLoadPRs }) => {
     prColor: {
       colorFromRepo: false,
     },
+    loadState: (() => {
+      const loadStateOp = {
+        setNumberOfLoadedPRs,
+        isPaused: false,
+        continue() { },
+      };
+
+      loadStateOp.pause = function () {
+        if (this.isPaused) return;
+        this.isPaused = true;
+        loadStateOp.toContinue = new Promise(resolve => {
+          loadStateOp.continue = toContinue => {
+            loadStateOp.isPaused = false;
+            if (!toContinue) {
+              setNumberOfLoadedPRs(0);
+            }
+            resolve(toContinue);
+          };
+        });
+      };
+
+      return loadStateOp;
+    })(),
   });
+  const [mouseHoverState, setMouseHoverState] = useState(false);
+  const [loadState, setLoadDataState] = useState(LOAD_STATE.NEEDS_TO_LOAD);
+  const [loadButtonCaption, setLoadButtonCaption] = useState(
+    `Load ${addCommas(rangeValue)} PR${rangeValue === '1' ? '' : 's'}`
+  );
 
   const toggleSelectedRepo = repoId => {
     const repo = selectedRepoStatus.find(({ id }) => id === repoId);
@@ -54,12 +89,16 @@ const SelectedRepositories = ({ selectedRepos, removeRepo, submitLoadPRs }) => {
   useEffect(() => {
     const total = selectedRepoStatus
       ?.reduce((acc, { numberOfPRs }) => acc + numberOfPRs, 0) ?? 0;
-    if (totalPRs === 0 && total > 0) {
-      setRangeValue(Math.min(RANGE_DEFAULT_VALUE, total));
-    }
+
     setTotalPRs(total);
-    if (rangeValue > total)
-      setRangeValue(Math.max(1, total));
+
+    if (total) {
+      log({ rangeValue, total });
+      setRangeValue(Math.min(rangeValue, total));
+    } else {
+      setRangeValue(RANGE_DEFAULT_VALUE);
+    }
+
   }, [selectedRepoStatus.length]);
 
   const onChangeFilterStatus = e => {
@@ -84,12 +123,55 @@ const SelectedRepositories = ({ selectedRepos, removeRepo, submitLoadPRs }) => {
   const onSubmit = e => {
     e.preventDefault();
 
-    setSubmitObject({
-      repos: [...selectedRepoStatus],
-      maxNumberOfPRs: rangeValue,
-      filterStatus,
-      prColor,
-    });
+    log({ onSubmit: loadState });
+
+    // eslint-disable-next-line default-case
+    switch (loadState) {
+      case LOAD_STATE.NEEDS_TO_LOAD: {
+        submitObject.loadState.continue(false);
+        setLoadDataState(LOAD_STATE.LOADING);
+        setSubmitObject({
+          ...submitObject,
+          repos: [...selectedRepoStatus],
+          maxNumberOfPRs: rangeValue,
+          filterStatus,
+          prColor,
+        });
+        break;
+      }
+      case LOAD_STATE.LOADING: {
+        submitObject.loadState.pause();
+        setLoadDataState(LOAD_STATE.PAUSED);
+        break;
+      }
+      case LOAD_STATE.PAUSED: {
+        submitObject.loadState.continue(true);
+        setLoadDataState(LOAD_STATE.LOADING);
+        break;
+      }
+    }
+  };
+
+  useEffect(() => {
+    setLoadButtonCaption(getLoadButtonCaption());
+  }, [loadState, mouseHoverState, rangeValue, numberOfLoadedPRs]);
+
+  const getLoadButtonCaption = () => {
+    // eslint-disable-next-line default-case
+    switch (loadState) {
+      case LOAD_STATE.NEEDS_TO_LOAD:
+        return `Load ${addCommas(rangeValue)} PR${rangeValue === '1' ? '' : 's'}`;
+      case LOAD_STATE.LOADING:
+        return mouseHoverState
+          ? `Pause (${addCommas(numberOfLoadedPRs)}/${addCommas(rangeValue)} PR${rangeValue === '1' ? '' : 's'})`
+          : `Loading... (${addCommas(numberOfLoadedPRs)}/${addCommas(rangeValue)} PR${rangeValue === '1' ? '' : 's'})`;
+      case LOAD_STATE.PAUSED:
+        return mouseHoverState
+          ? `Continue (${addCommas(numberOfLoadedPRs)}/${addCommas(rangeValue)} PR${rangeValue === '1' ? '' : 's'})`
+          : `Paused (${addCommas(numberOfLoadedPRs)}/${addCommas(rangeValue)} PR${rangeValue === '1' ? '' : 's'})`;
+      case LOAD_STATE.COMPLETED:
+        return `Loading ${addCommas(rangeValue)} PR${rangeValue === '1' ? '' : 's'} Completed`;
+    }
   };
 
   return (
@@ -120,8 +202,11 @@ const SelectedRepositories = ({ selectedRepos, removeRepo, submitLoadPRs }) => {
             onChange={e => setRangeValue(e.target.value)} />
           <label className='range-max' title='Total number of PRs for selected Repos'>{totalPRs}</label>
         </div>
-        <SubmitButton status='apply' title={`Loading the data for ${rangeValue} PRs`}>
-          {`Load ${addCommas(rangeValue)} PR${rangeValue === '1' ? '' : 's'}`}
+        <SubmitButton
+          onMouseOver={() => setMouseHoverState(true)}
+          onMouseOut={() => setMouseHoverState(false)}
+          status='apply'>
+          {loadButtonCaption}
         </SubmitButton>
       </form>
       <div className='pr-status-filter'>

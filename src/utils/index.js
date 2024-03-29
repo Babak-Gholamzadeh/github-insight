@@ -32,17 +32,17 @@ export const getRandomColor = (seed) => {
 };
 
 const hashCode = str => {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        hash = str.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    return hash;
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return hash;
 };
 
 const intToRGB = i => {
   const c = (i & 0x00FFFFFF)
-      .toString(16)
-      .toUpperCase();
+    .toString(16)
+    .toUpperCase();
   return "#" + "00000".substring(0, 6 - c.length) + c;
 };
 
@@ -85,7 +85,7 @@ export const getReadableTimePeriodObject = milliseconds => {
   ];
 
   return units
-    .reduce((result, {unit, label, duration}) => {
+    .reduce((result, { unit, label, duration }) => {
       const value = Math.floor(milliseconds / duration);
       milliseconds %= duration;
       return {
@@ -151,4 +151,23 @@ export const createPrecisionErrHandler = smallestValue => r => {
 };
 
 export const addCommas = number =>
- number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+export const REPO_COLORS = [
+  "#FF0000", // Red
+  "#00FF00", // Lime
+  "#0000FF", // Blue
+  "#FFFF00", // Yellow
+  "#FF00FF", // Fuchsia
+  "#00FFFF", // Cyan
+  "#FFA500", // Orange
+  "#FF4500", // OrangeRed
+  "#8A2BE2", // BlueViolet
+  "#FF69B4", // HotPink
+  "#DC143C", // Crimson
+  "#6B8E23", // OliveDrab
+  "#4682B4", // SteelBlue
+  "#FFFFFF", // White
+  "#F0E68C", // Khaki
+  "#800000", // Maroon
+];

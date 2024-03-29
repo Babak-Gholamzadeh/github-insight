@@ -20,7 +20,6 @@ const fetchAllPullRequests = async (
   { owner, token },
   loadPRsReq,
   setFecthedRecords,
-  updateFetchingDataProgress,
 ) => {
   if (!owner || !token) return;
 
@@ -64,10 +63,27 @@ const fetchAllPullRequests = async (
               Authorization: `Bearer ${token}`,
             },
           });
+
+          // Check if this loading process is paused
+          log({
+            loadStateIsPaused: loadPRsReq.loadState.isPaused,
+            numberOfLoadedPRs: loadPRsReq.loadState.numberOfLoadedPRs,
+          });
+          if (loadPRsReq.loadState.isPaused) {
+            log({ toContinue: 'waiting...' });
+            const toContinue = await loadPRsReq.loadState.toContinue;
+            log({ toContinue });
+            if (!toContinue) {
+              return;
+            }
+          }
+
+          // Check if a new loading operation is on going
           if (localFetchDataExecutionId !== globalFetchDataExecutionId) {
             log({ localFetchDataExecutionId, globalFetchDataExecutionId });
             return;
           }
+
         } catch (err) {
           // @TODO: do something with this error
           console.log('near err:', err);
@@ -130,7 +146,7 @@ const fetchAllPullRequests = async (
 
         // Update progress bar
         numberOfFecthedRecord += recordsPerPage.length;
-        updateFetchingDataProgress(numberOfFecthedRecord, loadPRsReq.maxNumberOfPRs);
+        loadPRsReq.loadState.setNumberOfLoadedPRs(numberOfFecthedRecord);
 
         loadRepo.currPage++;
 
@@ -143,8 +159,8 @@ const fetchAllPullRequests = async (
     // log({ sortedRecordsByLRNum: sortedRecordsByLR.map(({ id }) => id) });
   } catch (error) {
     console.error('Error fetching pull requests:', error.message);
+    loadPRsReq.loadState.setNumberOfLoadedPRs(0);
     setFecthedRecords(0);
-    updateFetchingDataProgress(0, 0);
     return 404;
   }
 };
@@ -159,9 +175,6 @@ const PullRequestList = ({ records }) => {
 
 const PullRequests = ({ auth, loadPRsReq }) => {
   const [NOW, setNOW] = useState(0);
-  const [progress, setProgress] = useState(0);
-  // console.log('PullRequests Component');
-
   const [paginatedRecords, setPaginatedRecords] = useState([]);
   const [allSortedPaginationRecordsByLR, setAllSortedPaginationRecordsByLR] = useState([]);
   const [allSortedRecordsByLR, setAllSortedRecordsByLR] = useState([]);
@@ -182,7 +195,6 @@ const PullRequests = ({ auth, loadPRsReq }) => {
       auth,
       loadPRsReq,
       setFecthedRecords,
-      updateFetchingDataProgress,
     );
     setNOW(now);
   }, [auth, loadPRsReq]);
@@ -193,11 +205,6 @@ const PullRequests = ({ auth, loadPRsReq }) => {
     setAllSortedRecordsByCA([...sortedRecordsByCA]);
   };
 
-  const updateFetchingDataProgress = (numberOfFecthedRecord, numberOfTOtalRecords) => {
-    log({ numberOfFecthedRecord, numberOfTOtalRecords });
-    setProgress(numberOfFecthedRecord * 100 / numberOfTOtalRecords);
-  };
-
   useEffect(() => {
     let prevLength = 0;
     const tId = setInterval(() => {
@@ -206,7 +213,6 @@ const PullRequests = ({ auth, loadPRsReq }) => {
           enable && filterStatus[state]
         );
       const totalVisibleRecords = visibleRecords.length;
-      // log({ totalVisibleRecords, prevLength, paginatedRecords: paginatedRecords.length });
       if (totalVisibleRecords === prevLength)
         return;
 
@@ -219,10 +225,8 @@ const PullRequests = ({ auth, loadPRsReq }) => {
 
       const startIndex = (pagination.curr - 1) * pagination.perPage;
       const endIndex = startIndex + pagination.perPage;
-      // log({ startIndex, endIndex });
 
       setPaginatedRecords(visibleRecords.slice(startIndex, endIndex));
-      // log({ visibleRecords1: visibleRecords.map(({ id }) => id) });
       prevLength = totalVisibleRecords;
     }, 100);
 
@@ -230,15 +234,12 @@ const PullRequests = ({ auth, loadPRsReq }) => {
   }, [allSortedPaginationRecordsByLR]);
 
   const changePage = pageNumber => {
-    // log({ pageNumber });
-
     if (pageNumber === pagination.curr) return;
 
     const visibleRecords = allSortedPaginationRecordsByLR
       .filter(({ loadRepo: { enable }, state, filterStatus }) =>
         enable && filterStatus[state]
       );
-    // log({ visibleRecords2: visibleRecords.map(({ id }) => id) });
 
     setPagination({
       ...pagination,
@@ -249,7 +250,6 @@ const PullRequests = ({ auth, loadPRsReq }) => {
 
     const startIndex = (pageNumber - 1) * pagination.perPage;
     const endIndex = startIndex + pagination.perPage;
-    // log({ startIndex2: startIndex, endIndex2: endIndex });
     setPaginatedRecords(visibleRecords.slice(startIndex, endIndex));
   };
 
@@ -259,19 +259,6 @@ const PullRequests = ({ auth, loadPRsReq }) => {
   return (
     <div className="pull-requests">
       <h3 className='section-title'>Long-running Pull Requests</h3>
-      {/* <div className={'selected-reop-list' + (progress >= 100 ? ' data-loaded' : '')}>
-        {progress < 100 ? <div className='progress-bar' style={{ width: `${progress}%` }}>{`${Math.round(progress)}%`}</div> : null}
-        {
-          selectedRepos ? selectedRepos.map(({ id, name, color, enable }) => {
-            return (
-              <div className={'selected-repo-item' + (enable ? '' : ' disabled')} key={id} onClick={() => toggleSelectedRepo(id)}>
-                <div className='selected-repo-item-name'>{name}</div>
-                <div className='selected-repo-item-color' style={{ backgroundColor: color }}></div>
-              </div>
-            );
-          }) : null
-        }
-      </div> */}
       <div className='visualization-section'>
         <BarChart records={allSortedRecordsByLR} NOW={NOW} />
       </div>

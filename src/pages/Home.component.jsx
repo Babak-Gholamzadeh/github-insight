@@ -3,7 +3,7 @@ import GitHubAPIAuthentication from '../components/GitHubAPIAuthentication/GitHu
 import OverviewSection from '../components/OverviewSection/OverviewSection.component';
 import SelectedRepositories from '../components/SelectedRepositories/SelectedRepositories.component';
 import PullRequests from '../components/PullRequests/PullRequests.component';
-import { getRandomColorWithName } from '../utils';
+import { getRandomColorWithName, REPO_COLORS } from '../utils';
 
 import './Home.style.scss';
 
@@ -25,13 +25,15 @@ const HomePage = () => {
   const [selectedRepos, selectRepo] = useState([]);
 
   const addRepo = repo => {
+    if(selectedRepos.length >= REPO_COLORS.length) return;
     if (selectedRepos.find(({ id }) => id === repo.id)) return;
     selectRepo([
       ...selectedRepos,
       {
         ...repo,
         enable: true,
-        color: getRandomColorWithName(repo.name),
+        // color: getRandomColorWithName(repo.name),
+        color: REPO_COLORS[selectedRepos.length % REPO_COLORS.length],
       },
     ]);
   };
