@@ -65,6 +65,12 @@ const fetchAllPullRequests = async (
           });
 
           // Check if this loading process is paused
+          if (loadPRsReq.loadState.isStopped) {
+            log({ stoppedFetching: true });
+            return;
+          }
+
+          // Check if this loading process is paused
           log({
             loadStateIsPaused: loadPRsReq.loadState.isPaused,
             numberOfLoadedPRs: loadPRsReq.loadState.numberOfLoadedPRs,
@@ -161,7 +167,7 @@ const fetchAllPullRequests = async (
     loadPRsReq.loadState.complete();
   } catch (error) {
     console.error('Error fetching pull requests:', error.message);
-    loadPRsReq.loadState.setNumberOfLoadedPRs(0);
+    loadPRsReq.loadState.stop();
     setFecthedRecords(0);
     return 404;
   }

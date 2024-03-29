@@ -4,6 +4,7 @@ import {
   log,
   getHumanReadableTimeAgo,
   getReadableTimePeriod,
+  isLightColor,
 } from '../../utils';
 import {
   Engine,
@@ -1114,6 +1115,7 @@ const GanttChart = ({ NOW, records }) => {
             ? pr.loadRepo.color
             : `rgba(${PR_STATE_COLORS[pr.state]})`;
           pr.backgroundColor = PRBGC;
+          pr.title.color = isLightColor(PRBGC) ? '#000' : '#fff';
 
           const trackIdx = this.trackOccupancy.registerInTrack(pr.x, pr.w);
 

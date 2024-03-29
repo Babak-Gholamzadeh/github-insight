@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import RepositoryTools from './RepositoryTools/RepositoryTools.component';
 import RepositoryItem from './RepositoryItem/RepositoryItem.component';
 import ListPagination from '../../ListPagination/ListPagination.component';
 import axios from 'axios';
@@ -29,7 +28,7 @@ const getRepositories = async ({ owner, token }, page, currentPaginatin) => {
     let records = [];
 
     if (owner) {
-      let nextPageUrl = `https://api.github.com/users/${owner}/repos?sort=updated&direction=desc&per_page=10&page=${page}`;
+      let nextPageUrl = `https://api.github.com/users/${owner}/repos?sort=updated&direction=desc&type=all&per_page=10&page=${page}`;
       const response = await axios.get(nextPageUrl, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -46,7 +45,9 @@ const getRepositories = async ({ owner, token }, page, currentPaginatin) => {
           return acc;
         }, pagination);
 
-      records = await Promise.all(response.data.map(async ({ id, name, html_url }) => {
+      records = await Promise.all(response.data.map(async ({
+        id, name, html_url, description, visibility, language, updated_at,
+      }) => {
         const [numberOfOpenPRs, numberOfClosedPRs] = await Promise.all([
           getNumberOfPRs({ owner, token, repo: name, state: 'open' }),
           getNumberOfPRs({ owner, token, repo: name, state: 'closed' }),
@@ -55,6 +56,10 @@ const getRepositories = async ({ owner, token }, page, currentPaginatin) => {
           id,
           name,
           html_url,
+          description,
+          visibility,
+          language,
+          updated_at,
           PRs: {
             total: numberOfOpenPRs + numberOfClosedPRs,
             open: numberOfOpenPRs,
@@ -125,7 +130,6 @@ const Repositories = ({ auth, selectedRepos, addRepo, removeRepo }) => {
         forbidden
           ? <div className='forbidden'>You don't have access to this section</div>
           : <div>
-            <RepositoryTools />
             <RepositoryList
               records={repos.records}
               selectedRepos={selectedRepos}

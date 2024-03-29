@@ -153,21 +153,22 @@ export const createPrecisionErrHandler = smallestValue => r => {
 export const addCommas = number =>
   number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
-export const REPO_COLORS = [
-  "#FF0000", // Red
-  "#00FF00", // Lime
-  "#0000FF", // Blue
-  "#FFFF00", // Yellow
-  "#FF00FF", // Fuchsia
-  "#00FFFF", // Cyan
-  "#FFA500", // Orange
-  "#FF4500", // OrangeRed
-  "#8A2BE2", // BlueViolet
-  "#FF69B4", // HotPink
-  "#DC143C", // Crimson
-  "#6B8E23", // OliveDrab
-  "#4682B4", // SteelBlue
-  "#FFFFFF", // White
-  "#F0E68C", // Khaki
-  "#800000", // Maroon
-];
+export const capitalizeSentence = sentence =>
+  sentence
+    .split(' ')
+    .map(w =>
+      w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
+    )
+    .join(' ');
+
+export const isLightColor = hexColor => {
+  hexColor = hexColor.replace('#', '');
+
+  const r = parseInt(hexColor.substring(0, 2), 16);
+  const g = parseInt(hexColor.substring(2, 4), 16);
+  const b = parseInt(hexColor.substring(4, 6), 16);
+
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+  return luminance > 0.5;
+};

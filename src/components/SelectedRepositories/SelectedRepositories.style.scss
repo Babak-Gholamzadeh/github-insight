@@ -30,6 +30,10 @@
 
     &:hover {
       max-height: 500px;
+
+      .collapse-mode-loading {
+        opacity: 0;
+      }
     }
   }
 
@@ -168,9 +172,10 @@
           width: 400px;
           background-color: #1f6feb17;
           border-color: #1f6feb7a;
+
           &:hover {
             background-color: #c5432e30;
-            border-color: #c5432e7a;  
+            border-color: #c5432e7a;
           }
         }
 
@@ -178,9 +183,10 @@
           width: 400px;
           background-color: #ffe10017;
           border-color: #ffe3007a;
+
           &:hover {
             background-color: #66cb0030;
-            border-color: #66cb007a;  
+            border-color: #66cb007a;
           }
         }
 
@@ -199,19 +205,19 @@
         transition: background-color .3s, width .3s;
       }
 
-      .loading + .loading-button {
+      .loading+.loading-button {
         background-color: #1f6feb4b;
       }
 
-      .paused + .loading-button {
+      .paused+.loading-button {
         background-color: #ffe3004b;
       }
 
-      .loading:hover + .loading-button {
+      .loading:hover+.loading-button {
         background-color: #c5432e4b;
       }
 
-      .paused:hover + .loading-button {
+      .paused:hover+.loading-button {
         background-color: #66cb004b;
       }
     }
@@ -334,6 +340,31 @@
           opacity: .3;
         }
       }
+    }
+  }
+
+  .collapse-mode-loading {
+    position: absolute;
+    height: 3px;
+    bottom: 0;
+    left: 0;
+    border-radius: 5px;
+    transition: opacity .3s, width .3s, background-color .3s;
+
+    &.needs-to-load {
+      background-color: transparent;
+    }
+
+    &.loading {
+      background-color: #1f71eb8a;
+    }
+    
+    &.paused {
+      background-color: #ffe10060;
+    }
+
+    &.completed {
+      background-color: #238636;
     }
   }
 }

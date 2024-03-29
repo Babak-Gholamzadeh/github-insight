@@ -15,7 +15,7 @@ const LOAD_STATE = {
   COMPLETED: 3,
 };
 
-const SelectedRepositories = ({ selectedRepos, removeRepo, submitLoadPRs }) => {
+const SelectedRepositories = ({ selectedRepos, removeRepo, submitLoadPRs, isRepoListFull }) => {
   const [selectedRepoStatus, setSelectedRepoStatus] = useState(selectedRepos);
   const [totalPRs, setTotalPRs] = useState(0);
   const [rangeValue, setRangeValue] = useState(RANGE_DEFAULT_VALUE);
@@ -45,9 +45,11 @@ const SelectedRepositories = ({ selectedRepos, removeRepo, submitLoadPRs }) => {
     loadState: (() => {
       const loadStateOp = {
         setNumberOfLoadedPRs,
+        isStopped: false,
         isPaused: false,
         continue() { },
         complete() { },
+        stop() { },
       };
 
       loadStateOp.pause = function () {
@@ -56,9 +58,6 @@ const SelectedRepositories = ({ selectedRepos, removeRepo, submitLoadPRs }) => {
         loadStateOp.toContinue = new Promise(resolve => {
           loadStateOp.continue = toContinue => {
             loadStateOp.isPaused = false;
-            if (!toContinue) {
-              setNumberOfLoadedPRs(0);
-            }
             resolve(toContinue);
           };
         });
@@ -105,7 +104,7 @@ const SelectedRepositories = ({ selectedRepos, removeRepo, submitLoadPRs }) => {
       setRangeValue(RANGE_DEFAULT_VALUE);
     }
 
-    setLoadDataState(LOAD_STATE.NEEDS_TO_LOAD);
+    submitObject.loadState.stop();
   }, [selectedRepoStatus.length]);
 
   const onChangeFilterStatus = e => {
@@ -134,9 +133,16 @@ const SelectedRepositories = ({ selectedRepos, removeRepo, submitLoadPRs }) => {
 
     switch (loadState) {
       case LOAD_STATE.NEEDS_TO_LOAD: {
-        submitObject.loadState.continue(false);
         setLoadDataState(LOAD_STATE.LOADING);
+        submitObject.loadState.isStopped = false;
         submitObject.loadState.complete = () => setLoadDataState(LOAD_STATE.COMPLETED);
+        submitObject.loadState.stop = function () {
+          log({ stop: true });
+          this.isStopped = true;
+          this.continue(false);
+          setNumberOfLoadedPRs(0);
+          setLoadDataState(LOAD_STATE.NEEDS_TO_LOAD);
+        };
         setSubmitObject({
           ...submitObject,
           repos: [...selectedRepoStatus],
@@ -161,7 +167,7 @@ const SelectedRepositories = ({ selectedRepos, removeRepo, submitLoadPRs }) => {
 
   const onChangeRangeValue = e => {
     const { value } = e.target;
-    setLoadDataState(LOAD_STATE.NEEDS_TO_LOAD);
+    submitObject.loadState.stop();
     setRangeValue(value);
   };
 
@@ -282,6 +288,24 @@ const SelectedRepositories = ({ selectedRepos, removeRepo, submitLoadPRs }) => {
           Show repo colors on the PRs
         </div>
       </div>
+      <div className={`collapse-mode-loading ${(() => {
+        switch (loadState) {
+          case LOAD_STATE.NEEDS_TO_LOAD:
+            return 'needs-to-load';
+          case LOAD_STATE.LOADING:
+            return 'loading';
+          case LOAD_STATE.PAUSED:
+            return 'paused';
+          case LOAD_STATE.COMPLETED:
+            return 'completed';
+        }
+      })()}`}
+        style={{
+          width: `${loadState === LOAD_STATE.LOADING || loadState === LOAD_STATE.PAUSED
+            ? loadingPercentage
+            : 100
+            }%`
+        }}></div>
     </div>
   );
 };

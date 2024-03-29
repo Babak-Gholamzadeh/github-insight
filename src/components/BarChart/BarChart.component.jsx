@@ -12,7 +12,6 @@ import {
   Scene,
   EmptyObject,
   Line,
-  Ploygon,
   Rect,
   RectImage,
   Text,
@@ -37,16 +36,6 @@ const PR_STATE_ICONS = {
   merged: mergedPullRequestIcon,
   closed: closedPullRequestIcon,
 };
-
-const MONTH_FULL_NAMES = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-];
-
-const MONTH_SHORT_NAMES = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-];
 
 const BG_HIGHLIGHT_COLORS = (op) => [
   `rgba(255, 215, 0, ${op})`,     // Gold
@@ -265,10 +254,10 @@ const BarChart = ({ NOW, records }) => {
         end: posY,
         unit: 'ms',
         get fullText() {
-          return this.value.toString() + this.unit;
+          return (this.value + 1).toString() + this.unit;
         },
         get shortText() {
-          return this.value.toString();
+          return (this.value + 1).toString();
         },
       };
 
@@ -288,10 +277,10 @@ const BarChart = ({ NOW, records }) => {
         },
         unit: 's',
         get fullText() {
-          return this.value.toString() + this.unit;
+          return (this.value + 1).toString() + this.unit;
         },
         get shortText() {
-          return this.value.toString();
+          return (this.value + 1).toString();
         },
       };
 
@@ -311,10 +300,10 @@ const BarChart = ({ NOW, records }) => {
         },
         unit: 'm',
         get fullText() {
-          return this.value.toString() + this.unit;
+          return (this.value + 1).toString() + this.unit;
         },
         get shortText() {
-          return this.value.toString();
+          return (this.value + 1).toString();
         },
       };
 
@@ -334,10 +323,10 @@ const BarChart = ({ NOW, records }) => {
         },
         unit: 'h',
         get fullText() {
-          return this.value.toString() + this.unit;
+          return (this.value + 1).toString() + this.unit;
         },
         get shortText() {
-          return this.value.toString();
+          return (this.value + 1).toString();
         },
       };
 
@@ -357,10 +346,10 @@ const BarChart = ({ NOW, records }) => {
         },
         unit: 'd',
         get fullText() {
-          return this.value.toString() + this.unit;
+          return (this.value + 1).toString() + this.unit;
         },
         get shortText() {
-          return this.value.toString();
+          return (this.value + 1).toString();
         },
       };
 
@@ -380,10 +369,10 @@ const BarChart = ({ NOW, records }) => {
         },
         unit: 'm',
         get fullText() {
-          return this.value.toString() + this.unit;
+          return (this.value + 1).toString() + this.unit;
         },
         get shortText() {
-          return this.value.toString();
+          return (this.value + 1).toString();
         },
       };
 
@@ -403,10 +392,10 @@ const BarChart = ({ NOW, records }) => {
         },
         unit: 'y',
         get fullText() {
-          return this.value.toString() + this.unit;
+          return (this.value + 1).toString() + this.unit;
         },
         get shortText() {
-          return this.value.toString();
+          return (this.value + 1).toString();
         },
       };
 
