@@ -47,11 +47,7 @@ const SelectedRepositories = ({ selectedRepos, removeRepo, submitLoadPRs }) => {
         setNumberOfLoadedPRs,
         isPaused: false,
         continue() { },
-        complete() {
-          log({ complete: 1, maxNumberOfPRs: submitObject?.maxNumberOfPRs, numberOfLoadedPRs });
-          if (submitObject?.maxNumberOfPRs && numberOfLoadedPRs >= submitObject.maxNumberOfPRs)
-            setLoadDataState(LOAD_STATE.COMPLETED)
-        },
+        complete() { },
       };
 
       loadStateOp.pause = function () {
@@ -106,6 +102,7 @@ const SelectedRepositories = ({ selectedRepos, removeRepo, submitLoadPRs }) => {
       setRangeValue(RANGE_DEFAULT_VALUE);
     }
 
+    setLoadDataState(LOAD_STATE.NEEDS_TO_LOAD);
   }, [selectedRepoStatus.length]);
 
   const onChangeFilterStatus = e => {
@@ -132,11 +129,11 @@ const SelectedRepositories = ({ selectedRepos, removeRepo, submitLoadPRs }) => {
 
     log({ onSubmit: loadState });
 
-    // eslint-disable-next-line default-case
     switch (loadState) {
       case LOAD_STATE.NEEDS_TO_LOAD: {
         submitObject.loadState.continue(false);
         setLoadDataState(LOAD_STATE.LOADING);
+        submitObject.loadState.complete = () => setLoadDataState(LOAD_STATE.COMPLETED);
         setSubmitObject({
           ...submitObject,
           repos: [...selectedRepoStatus],
@@ -159,6 +156,12 @@ const SelectedRepositories = ({ selectedRepos, removeRepo, submitLoadPRs }) => {
     }
   };
 
+  const onChangeRangeValue = e => {
+    const { value } = e.target;
+    setLoadDataState(LOAD_STATE.NEEDS_TO_LOAD);
+    setRangeValue(value);
+  };
+
   useEffect(() => {
     setLoadButtonCaption(getLoadButtonCaption());
     setLoadingPercentage(Math.floor(numberOfLoadedPRs / rangeValue * 100));
@@ -178,7 +181,7 @@ const SelectedRepositories = ({ selectedRepos, removeRepo, submitLoadPRs }) => {
           ? `Continue (${addCommas(numberOfLoadedPRs)}/${addCommas(rangeValue)} PR${rangeValue === '1' ? '' : 's'})`
           : `Paused (${addCommas(numberOfLoadedPRs)}/${addCommas(rangeValue)} PR${rangeValue === '1' ? '' : 's'})`;
       case LOAD_STATE.COMPLETED:
-        return `Loading ${addCommas(rangeValue)} PR${rangeValue === '1' ? '' : 's'} Completed`;
+        return `Completely ${addCommas(rangeValue)} PR${rangeValue === '1' ? '' : 's'} Loaded`;
     }
   };
 
@@ -207,7 +210,7 @@ const SelectedRepositories = ({ selectedRepos, removeRepo, submitLoadPRs }) => {
           <label className='range-min' title='Minimum number of PRs to display'>1</label>
           <input id="typeinp" type="range" step="1"
             min="1" max={totalPRs} value={rangeValue} title={rangeValue}
-            onChange={e => setRangeValue(e.target.value)} />
+            onChange={onChangeRangeValue} />
           <label className='range-max' title='Total number of PRs for selected Repos'>{totalPRs}</label>
         </div>
         <SubmitButton

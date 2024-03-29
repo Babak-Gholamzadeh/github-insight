@@ -1,8 +1,10 @@
-- There should be a button in that list to 'start fetching the data' and after clicking on that, changing on the list should be disabled and the button gets changed to 'stop the fetching of the data' and after clicking on this one, should keep the fecthed data and display it and also let the user to manipulate the list but still shows the progess bar of the fetched data. (Or it should be 'pause' and 'stop'?)
++ There should be a button in that list to 'start fetching the data' and after clicking on that, changing on the list should be disabled and the button gets changed to 'stop the fetching of the data' and after clicking on this one, should keep the fecthed data and display it and also let the user to manipulate the list but still shows the progess bar of the fetched data. (Or it should be 'pause' and 'stop'?)
 
 - Show loading somewhere when change the page in repository table
 
 - Show the keyboard shortcuts somewhere on each canvas
+
+- Fix the issue when clearning the selected repo list to hid charts
 
 ----------------
 
@@ -35,3 +37,7 @@
 - fix token expiration time (undefined)
 
 - fix null users for owner
+
+- Show a side color in repository table for each row (add / remove / none)
+
+- PR background-color oposite od foreground-color

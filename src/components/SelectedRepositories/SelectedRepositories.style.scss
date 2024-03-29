@@ -161,6 +161,7 @@
       margin: 10px 0;
 
       .apply {
+        width: 200px;
         transition: width .3s, background-color .3s, border-color .3s;
 
         &.loading {
@@ -184,9 +185,10 @@
         }
 
         &.completed {
-          // width: 400px;
+          width: 300px;
           background-color: #238636;
           border-color: #238636;
+          pointer-events: none;
         }
       }
 
@@ -194,7 +196,7 @@
         height: 100%;
         left: 0;
         top: 0;
-        transition: background-color .3s;
+        transition: background-color .3s, width .3s;
       }
 
       .loading + .loading-button {
