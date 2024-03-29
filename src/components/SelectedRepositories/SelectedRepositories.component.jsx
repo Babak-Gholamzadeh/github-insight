@@ -218,9 +218,9 @@ const SelectedRepositories = ({ selectedRepos, removeRepo, submitLoadPRs, isRepo
         <div className='range-area'>
           <label className='range-min' title='Minimum number of PRs to display'>1</label>
           <input id="typeinp" type="range" step="1"
-            min="1" max={totalPRs} value={rangeValue} title={rangeValue}
+            min="1" max={totalPRs} value={rangeValue} title={addCommas(rangeValue)}
             onChange={onChangeRangeValue} />
-          <label className='range-max' title='Total number of PRs for selected Repos'>{totalPRs}</label>
+          <label className='range-max' title='Total number of PRs for selected Repos'>{addCommas(totalPRs)}</label>
         </div>
         <SubmitButton
           onMouseOver={() => setMouseHoverState(true)}
@@ -282,10 +282,10 @@ const SelectedRepositories = ({ selectedRepos, removeRepo, submitLoadPRs, isRepo
       </div>
       <div className='pr-colors'>
         <div className={'pr-colors-item' + (!prColor.colorFromRepo ? ' selected' : '')} onClick={() => onChangeColorFromRepo(false)}>
-          Show the PR colors based ont their status
+          Show the PR colors based on their status
         </div>
         <div className={'pr-colors-item' + (prColor.colorFromRepo ? ' selected' : '')} onClick={() => onChangeColorFromRepo(true)}>
-          Show repo colors on the PRs
+          Show the PR colors based on their repo color
         </div>
       </div>
       <div className={`collapse-mode-loading ${(() => {

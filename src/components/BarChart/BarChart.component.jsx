@@ -481,7 +481,7 @@ const BarChart = ({ NOW, records }) => {
         let largeFontSize = 16;
         let currDateXOffset = width;
         let higherDateXOffset = 0;
-        // const MAX_BG_HIGHLIGHT_OP = .05;
+        const MAX_BG_HIGHLIGHT_OP = .03;
         // log({ currMSHeight });
 
         const itsEnding = currDurationPos.value === currDurationPos.max;
@@ -528,6 +528,39 @@ const BarChart = ({ NOW, records }) => {
               textPositionY,
             ],
           });
+
+          const hAlpha = Math.min(currDurationPos.higherDate.fullHeight / camSize[1], 1) * MAX_BG_HIGHLIGHT_OP;
+          const BG_COLORS = BG_HIGHLIGHT_COLORS(hAlpha);
+          this.scene.camera.renderRoundRect({
+            backgroundColor: BG_COLORS[currDurationPos.higherDate.value % BG_COLORS.length],
+            position: [
+              camEdgePos.r,
+              currDurationPos.higherDate.end,
+            ],
+            size: [
+              camSize[0],
+              currDurationPos.higherDate.fullHeight,
+            ],
+          });
+
+          if (currDurationPos.higherDate.higherDate) {
+            const hhAlpha = MAX_BG_HIGHLIGHT_OP - hAlpha;
+            const itsBeginning = currDurationPos.higherDate.value === currDurationPos.higherDate.min;
+            if (itsBeginning) {
+              const BG_COLORS = BG_HIGHLIGHT_COLORS(hhAlpha);
+              this.scene.camera.renderRoundRect({
+                backgroundColor: BG_COLORS[currDurationPos.higherDate.higherDate.value % BG_COLORS.length],
+                position: [
+                  camEdgePos.r,
+                  currDurationPos.higherDate.higherDate.end,
+                ],
+                size: [
+                  camSize[0],
+                  currDurationPos.higherDate.higherDate.fullHeight,
+                ],
+              });
+            }
+          }
         }
 
         while (true && i < 1000) {
@@ -545,42 +578,6 @@ const BarChart = ({ NOW, records }) => {
 
           const itsBeginning = currDurationPos.value === currDurationPos.min;
           const itsEnding = currDurationPos.value === currDurationPos.max;
-
-          // BG Highlight
-          // if (currDatePos.higherDate && itsBeginning) {
-          //   const hAlpha = Math.min(currDatePos.higherDate.fullWidth / camSize[0], 1) * MAX_BG_HIGHLIGHT_OP;
-          //   const BG_COLORS = BG_HIGHLIGHT_COLORS(hAlpha);
-          //   this.scene.camera.renderRoundRect({
-          //     backgroundColor: BG_COLORS[currDatePos.higherDate.value % BG_COLORS.length],
-          //     position: [
-          //       currDatePos.higherDate.begin,
-          //       camEdgePos.b,
-          //     ],
-          //     size: [
-          //       -currDatePos.higherDate.fullWidth,
-          //       camSize[1],
-          //     ],
-          //   });
-
-          //   if (currDatePos.higherDate.higherDate) {
-          //     const hhAlpha = MAX_BG_HIGHLIGHT_OP - hAlpha;
-          //     const itsBeginning = currDatePos.higherDate.value === currDatePos.higherDate.min;
-          //     if (itsBeginning) {
-          //       const BG_COLORS = BG_HIGHLIGHT_COLORS(hhAlpha);
-          //       this.scene.camera.renderRoundRect({
-          //         backgroundColor: BG_COLORS[currDatePos.higherDate.higherDate.value % BG_COLORS.length],
-          //         position: [
-          //           currDatePos.higherDate.higherDate.begin,
-          //           camEdgePos.b,
-          //         ],
-          //         size: [
-          //           -currDatePos.higherDate.higherDate.fullWidth,
-          //           camSize[1],
-          //         ],
-          //       });
-          //     }
-          //   }
-          // }
 
           if (currHeight < maxHeight) {
             lineLength = (currHeight) / (maxHeight) * width;
@@ -639,43 +636,41 @@ const BarChart = ({ NOW, records }) => {
                 textPositionY,
               ],
             });
+
+            const hAlpha = Math.min(currDurationPos.higherDate.fullHeight / camSize[1], 1) * MAX_BG_HIGHLIGHT_OP;
+            const BG_COLORS = BG_HIGHLIGHT_COLORS(hAlpha);
+            this.scene.camera.renderRoundRect({
+              backgroundColor: BG_COLORS[currDurationPos.higherDate.value % BG_COLORS.length],
+              position: [
+                camEdgePos.r,
+                currDurationPos.higherDate.end,
+              ],
+              size: [
+                camSize[0],
+                currDurationPos.higherDate.fullHeight,
+              ],
+            });
+
+            if (currDurationPos.higherDate.higherDate) {
+              const hhAlpha = MAX_BG_HIGHLIGHT_OP - hAlpha;
+              const itsBeginning = currDurationPos.higherDate.value === currDurationPos.higherDate.min;
+              if (itsBeginning) {
+                const BG_COLORS = BG_HIGHLIGHT_COLORS(hhAlpha);
+                this.scene.camera.renderRoundRect({
+                  backgroundColor: BG_COLORS[currDurationPos.higherDate.higherDate.value % BG_COLORS.length],
+                  position: [
+                    camEdgePos.r,
+                    currDurationPos.higherDate.higherDate.end,
+                  ],
+                  size: [
+                    camSize[0],
+                    currDurationPos.higherDate.higherDate.fullHeight,
+                  ],
+                });
+              }
+            }
           }
-
         }
-
-        // if (currDatePos.higherDate) {
-        //   const hAlpha = Math.min(currDatePos.higherDate.fullWidth / camSize[0], 1) * MAX_BG_HIGHLIGHT_OP;
-        //   const BG_COLORS = BG_HIGHLIGHT_COLORS(hAlpha);
-        //   this.scene.camera.renderRoundRect({
-        //     backgroundColor: BG_COLORS[currDatePos.higherDate.value % BG_COLORS.length],
-        //     position: [
-        //       currDatePos.higherDate.end,
-        //       camEdgePos.b,
-        //     ],
-        //     size: [
-        //       currDatePos.higherDate.fullWidth,
-        //       camSize[1],
-        //     ],
-        //   });
-        //   if (currDatePos.higherDate.higherDate) {
-        //     const hhAlpha = MAX_BG_HIGHLIGHT_OP - hAlpha;
-        //     const itsBeginning = currDatePos.higherDate.value === currDatePos.higherDate.min;
-        //     if (itsBeginning) {
-        //       const BG_COLORS = BG_HIGHLIGHT_COLORS(hhAlpha);
-        //       this.scene.camera.renderRoundRect({
-        //         backgroundColor: BG_COLORS[currDatePos.higherDate.higherDate.value % BG_COLORS.length],
-        //         position: [
-        //           currDatePos.higherDate.higherDate.end,
-        //           camEdgePos.b,
-        //         ],
-        //         size: [
-        //           currDatePos.higherDate.higherDate.fullWidth,
-        //           camSize[1],
-        //         ],
-        //       });
-        //     }
-        //   }
-        // }
 
         // currDate text
         if (textColorAlpha > 0) {
