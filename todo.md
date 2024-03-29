@@ -1,8 +1,4 @@
-+ fix null users for owner
-
-+ fix token expiration time (undefined)
-
-- Fix X scroll in chrome
++ Fix X scroll in chrome
 
 ---------------------
 

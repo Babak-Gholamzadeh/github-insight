@@ -7,8 +7,7 @@ a {
 .app {
   background-color: #0d1117;
   color: #ffffff;
-  height: 100%;
-  overflow: scroll;
+  min-height: 100%;
 
   .page-container {
     width: 100%;

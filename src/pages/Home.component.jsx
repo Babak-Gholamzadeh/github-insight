@@ -44,9 +44,6 @@ const repoColors = {
 
 const HomePage = () => {
   const [auth, setAuth] = useState({
-    // owner: 'babak-gholamzadeh',
-    // ownerType: 'user',
-    // token: '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',
     owner: '',
     ownerType: '',
     token: '',
