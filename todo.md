@@ -1,8 +1,6 @@
-+ Show the timeline time section color for the bar chart
++ fix null users for owner
 
-- fix null users for owner
-
-- fix token expiration time (undefined)
++ fix token expiration time (undefined)
 
 - Fix X scroll in chrome
 
@@ -35,3 +33,5 @@
 - Add zoom reset on charts
 
 - Add position reset on charts
+
+- make web page responsive

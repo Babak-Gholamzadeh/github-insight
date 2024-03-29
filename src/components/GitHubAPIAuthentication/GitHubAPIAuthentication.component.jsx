@@ -3,6 +3,7 @@ import TextInput from '../TextInput/TextInput.component';
 import SubmitButton from '../SubmitButton/SubmitButton.component';
 import Checkbox from '../Checkbox/Checkbox.component';
 import axios from 'axios';
+import { log, capitalizeSentence } from '../../utils';
 
 import './GitHubAPIAuthentication.style.scss';
 
@@ -93,8 +94,10 @@ const GitHubAPIAuthentication = ({ auth, setAuth }) => {
       setOwnerType(ownerResponse.value.data.type.toLowerCase());
       setOwnerInputStatus({
         status: INPUT_STATUS.SUCCESS,
-        message: `${ownerResponse.value.data.name} (${ownerResponse.value.data.type})`,
+        name: ownerResponse.value.data.name || ownerResponse.value.data.login,
+        html_url: ownerResponse.value.data.html_url,
       });
+      log({ html_url: ownerResponse.value.data.html_url });
     }
 
     if (tokenResponse.status === 'rejected') {
@@ -115,7 +118,7 @@ const GitHubAPIAuthentication = ({ auth, setAuth }) => {
       setTokenInputStatus({
         status: INPUT_STATUS.SUCCESS,
         // @FIXME: Expiration time is undefined
-        message: `Token is valid until ${tokenResponse.value.headers.get('github-authentication-token-expiration')}`,
+        message: `Token is valid`,
       });
     }
 
@@ -150,7 +153,21 @@ const GitHubAPIAuthentication = ({ auth, setAuth }) => {
     <div className="api-auth">
       <form onSubmit={onSubmit} className='auth-container'>
         <div className='auth-element auth-owner'>
-          <label className={`message ${ownerInputStatus.status}`}>{ownerInputStatus.message}</label>
+          <label className={`message ${ownerInputStatus.status}`}>{
+            ownerInputStatus.status === INPUT_STATUS.SUCCESS
+              ?
+              <>
+                <a
+                  href={ownerInputStatus.html_url}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {ownerInputStatus.name}
+                </a>
+                {`(${capitalizeSentence(ownerType)})`}
+              </>
+              : ownerInputStatus.message
+          }</label>
           <TextInput
             id="owner"
             name="owner"
