@@ -97,8 +97,11 @@ const SelectedRepositories = ({ selectedRepos, removeRepo, submitLoadPRs }) => {
 
     if (total) {
       log({ rangeValue, total });
-      setRangeValue(Math.min(rangeValue, total));
+      const newValue = Math.min(rangeValue, total);
+      submitObject.maxNumberOfPRs = newValue;
+      setRangeValue(newValue);
     } else {
+      submitObject.maxNumberOfPRs = 0;
       setRangeValue(RANGE_DEFAULT_VALUE);
     }
 

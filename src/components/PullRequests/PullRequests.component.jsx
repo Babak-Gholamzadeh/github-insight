@@ -255,6 +255,8 @@ const PullRequests = ({ auth, loadPRsReq }) => {
     setPaginatedRecords(visibleRecords.slice(startIndex, endIndex));
   };
 
+  log({ maxNumberOfPRs: loadPRsReq?.maxNumberOfPRs });
+
   if (!auth.owner || !auth.ownerType || !auth.token || !loadPRsReq?.maxNumberOfPRs)
     return null;
 

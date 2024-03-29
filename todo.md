@@ -1,10 +1,8 @@
-+ There should be a button in that list to 'start fetching the data' and after clicking on that, changing on the list should be disabled and the button gets changed to 'stop the fetching of the data' and after clicking on this one, should keep the fecthed data and display it and also let the user to manipulate the list but still shows the progess bar of the fetched data. (Or it should be 'pause' and 'stop'?)
++ Fix the issue when clearning the selected repo list to hid charts
 
 - Show loading somewhere when change the page in repository table
 
 - Show the keyboard shortcuts somewhere on each canvas
-
-- Fix the issue when clearning the selected repo list to hid charts
 
 ----------------
 
