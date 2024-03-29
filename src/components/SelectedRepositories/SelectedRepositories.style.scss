@@ -161,33 +161,56 @@
       margin: 10px 0;
 
       .apply {
-        transition: width .3s;
+        transition: width .3s, background-color .3s, border-color .3s;
 
         &.loading {
           width: 400px;
+          background-color: #1f6feb17;
+          border-color: #1f6feb7a;
+          &:hover {
+            background-color: #c5432e30;
+            border-color: #c5432e7a;  
+          }
+        }
+
+        &.paused {
+          width: 400px;
           background-color: #ffe10017;
           border-color: #ffe3007a;
+          &:hover {
+            background-color: #66cb0030;
+            border-color: #66cb007a;  
+          }
         }
-      }
 
-      &:hover {
-        .loading-button {
-          background-color: #ffe1005d;
-        }
-      }
-
-      &:active {
-        .loading-button {
-          background-color: #d8c00695;
+        &.completed {
+          // width: 400px;
+          background-color: #238636;
+          border-color: #238636;
         }
       }
 
       .loading-button {
         height: 100%;
-        background-color: #ffe1004b;
         left: 0;
         top: 0;
         transition: background-color .3s;
+      }
+
+      .loading + .loading-button {
+        background-color: #1f6feb4b;
+      }
+
+      .paused + .loading-button {
+        background-color: #ffe3004b;
+      }
+
+      .loading:hover + .loading-button {
+        background-color: #c5432e4b;
+      }
+
+      .paused:hover + .loading-button {
+        background-color: #66cb004b;
       }
     }
 

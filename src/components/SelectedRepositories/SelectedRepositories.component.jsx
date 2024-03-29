@@ -28,6 +28,7 @@ const SelectedRepositories = ({ selectedRepos, removeRepo, submitLoadPRs }) => {
   const [prColor, setPRColor] = useState({
     colorFromRepo: false,
   });
+  const [loadState, setLoadDataState] = useState(LOAD_STATE.NEEDS_TO_LOAD);
   const [numberOfLoadedPRs, setNumberOfLoadedPRs] = useState(0);
   const [submitObject, setSubmitObject] = useState({
     repos: [],
@@ -46,6 +47,11 @@ const SelectedRepositories = ({ selectedRepos, removeRepo, submitLoadPRs }) => {
         setNumberOfLoadedPRs,
         isPaused: false,
         continue() { },
+        complete() {
+          log({ complete: 1, maxNumberOfPRs: submitObject?.maxNumberOfPRs, numberOfLoadedPRs });
+          if (submitObject?.maxNumberOfPRs && numberOfLoadedPRs >= submitObject.maxNumberOfPRs)
+            setLoadDataState(LOAD_STATE.COMPLETED)
+        },
       };
 
       loadStateOp.pause = function () {
@@ -66,7 +72,6 @@ const SelectedRepositories = ({ selectedRepos, removeRepo, submitLoadPRs }) => {
     })(),
   });
   const [mouseHoverState, setMouseHoverState] = useState(false);
-  const [loadState, setLoadDataState] = useState(LOAD_STATE.NEEDS_TO_LOAD);
   const [loadingPercentage, setLoadingPercentage] = useState(0);
   const [loadButtonCaption, setLoadButtonCaption] = useState(
     `Load ${addCommas(rangeValue)} PR${rangeValue === '1' ? '' : 's'}`
@@ -157,7 +162,6 @@ const SelectedRepositories = ({ selectedRepos, removeRepo, submitLoadPRs }) => {
   useEffect(() => {
     setLoadButtonCaption(getLoadButtonCaption());
     setLoadingPercentage(Math.floor(numberOfLoadedPRs / rangeValue * 100));
-    // log({ numberOfLoadedPRs, rangeValue, loadingPercentage });
   }, [loadState, mouseHoverState, rangeValue, numberOfLoadedPRs]);
 
   const getLoadButtonCaption = () => {
@@ -210,7 +214,8 @@ const SelectedRepositories = ({ selectedRepos, removeRepo, submitLoadPRs }) => {
           onMouseOver={() => setMouseHoverState(true)}
           onMouseOut={() => setMouseHoverState(false)}
           loadedPercentage={
-            loadState === LOAD_STATE.LOADING
+            loadState === LOAD_STATE.LOADING ||
+              loadState === LOAD_STATE.PAUSED
               ? `${loadingPercentage}%`
               : null
           }
@@ -221,7 +226,14 @@ const SelectedRepositories = ({ selectedRepos, removeRepo, submitLoadPRs }) => {
                 status.push('loading');
                 break;
               }
-              // case LOAD
+              case LOAD_STATE.PAUSED: {
+                status.push('paused')
+                break;
+              }
+              case LOAD_STATE.COMPLETED: {
+                status.push('completed')
+                break;
+              }
             }
 
             return status.join(' ');

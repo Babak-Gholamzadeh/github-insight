@@ -102,5 +102,8 @@
 
   .loading-button {
     position: absolute;
+    z-index: -1;
+    user-select: none;
+    pointer-events: none;
   }
 }

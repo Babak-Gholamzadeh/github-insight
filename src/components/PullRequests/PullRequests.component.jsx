@@ -156,7 +156,9 @@ const fetchAllPullRequests = async (
 
       loadRepos = loadRepos.filter(({ currPage, lastPage }) => currPage <= lastPage);
     }
-    // log({ sortedRecordsByLRNum: sortedRecordsByLR.map(({ id }) => id) });
+    // Data has fetched completly
+    log({ callingComplete: numberOfFecthedRecord });
+    loadPRsReq.loadState.complete();
   } catch (error) {
     console.error('Error fetching pull requests:', error.message);
     loadPRsReq.loadState.setNumberOfLoadedPRs(0);
