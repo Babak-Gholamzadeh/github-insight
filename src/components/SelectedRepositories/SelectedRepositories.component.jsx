@@ -1,3 +1,4 @@
+/* eslint-disable default-case */
 import { useEffect, useState } from 'react';
 import removeIcon from '../../assets/images/close-sm-svgrepo-com.svg';
 import SubmitButton from '../SubmitButton/SubmitButton.component';
@@ -66,6 +67,7 @@ const SelectedRepositories = ({ selectedRepos, removeRepo, submitLoadPRs }) => {
   });
   const [mouseHoverState, setMouseHoverState] = useState(false);
   const [loadState, setLoadDataState] = useState(LOAD_STATE.NEEDS_TO_LOAD);
+  const [loadingPercentage, setLoadingPercentage] = useState(0);
   const [loadButtonCaption, setLoadButtonCaption] = useState(
     `Load ${addCommas(rangeValue)} PR${rangeValue === '1' ? '' : 's'}`
   );
@@ -154,6 +156,8 @@ const SelectedRepositories = ({ selectedRepos, removeRepo, submitLoadPRs }) => {
 
   useEffect(() => {
     setLoadButtonCaption(getLoadButtonCaption());
+    setLoadingPercentage(Math.floor(numberOfLoadedPRs / rangeValue * 100));
+    // log({ numberOfLoadedPRs, rangeValue, loadingPercentage });
   }, [loadState, mouseHoverState, rangeValue, numberOfLoadedPRs]);
 
   const getLoadButtonCaption = () => {
@@ -205,7 +209,23 @@ const SelectedRepositories = ({ selectedRepos, removeRepo, submitLoadPRs }) => {
         <SubmitButton
           onMouseOver={() => setMouseHoverState(true)}
           onMouseOut={() => setMouseHoverState(false)}
-          status='apply'>
+          loadedPercentage={
+            loadState === LOAD_STATE.LOADING
+              ? `${loadingPercentage}%`
+              : null
+          }
+          status={(() => {
+            const status = ['apply'];
+            switch (loadState) {
+              case LOAD_STATE.LOADING: {
+                status.push('loading');
+                break;
+              }
+              // case LOAD
+            }
+
+            return status.join(' ');
+          })()}>
           {loadButtonCaption}
         </SubmitButton>
       </form>

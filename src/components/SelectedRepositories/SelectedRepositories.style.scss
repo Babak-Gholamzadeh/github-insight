@@ -157,8 +157,38 @@
 
     }
 
-    .apply {
+    .submit-button-wrapper {
       margin: 10px 0;
+
+      .apply {
+        transition: width .3s;
+
+        &.loading {
+          width: 400px;
+          background-color: #ffe10017;
+          border-color: #ffe3007a;
+        }
+      }
+
+      &:hover {
+        .loading-button {
+          background-color: #ffe1005d;
+        }
+      }
+
+      &:active {
+        .loading-button {
+          background-color: #d8c00695;
+        }
+      }
+
+      .loading-button {
+        height: 100%;
+        background-color: #ffe1004b;
+        left: 0;
+        top: 0;
+        transition: background-color .3s;
+      }
     }
 
   }

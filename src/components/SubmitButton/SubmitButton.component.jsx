@@ -1,20 +1,29 @@
 import './SubmitButton.style.scss';
 
-const SubmitButton = ({ children, disabled, status, onMouseOver, onMouseOut, rest }) => {
+const SubmitButton = ({ children, disabled, status, onMouseOver, onMouseOut, loadedPercentage, rest }) => {
   return (
-    <button
-      className={
-        'submit-button' +
-        (disabled ? ' disabled' : '') +
-        ` ${status}`
+    <div className='submit-button-wrapper'>
+      <button
+        className={
+          'submit-button' +
+          (disabled ? ' disabled' : '') +
+          ` ${status}`
+        }
+        type='submit'
+        onMouseOver={onMouseOver}
+        onMouseOut={onMouseOut}
+        {...rest}
+      >
+        {children}
+      </button>
+      {
+        loadedPercentage
+          ? <div
+            style={{ width: loadedPercentage }}
+            className='loading-button'></div>
+          : null
       }
-      type='submit'
-      onMouseOver={onMouseOver}
-      onMouseOut={onMouseOut}
-      {...rest}
-    >
-      {children}
-    </button>
+    </div>
   );
 };
 
