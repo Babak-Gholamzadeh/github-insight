@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/github-insight/static/css/main.36af7ac3.css",
-    "main.js": "/github-insight/static/js/main.25b2752d.js",
+    "main.css": "/github-insight/static/css/main.2d93d1ae.css",
+    "main.js": "/github-insight/static/js/main.a6111f9b.js",
     "static/js/453.aad78720.chunk.js": "/github-insight/static/js/453.aad78720.chunk.js",
     "static/media/git-pull-request-closed-svgrepo-com.svg": "/github-insight/static/media/git-pull-request-closed-svgrepo-com.3595e590f8862e0037c58a20f68f42d4.svg",
     "static/media/git-pull-request-draft-svgrepo-com.svg": "/github-insight/static/media/git-pull-request-draft-svgrepo-com.fb21caeb81c0de9615bad58140e38c76.svg",
@@ -14,12 +14,12 @@
     "static/media/check-svgrepo-com.svg": "/github-insight/static/media/check-svgrepo-com.13fe514a71c87be489ada154c2eb0db0.svg",
     "static/media/plus-svgrepo-com.svg": "/github-insight/static/media/plus-svgrepo-com.f0feaa3ab94280e9dd8d8db4606f122c.svg",
     "static/media/minus-svgrepo-com.svg": "/github-insight/static/media/minus-svgrepo-com.a4f6a9e7f8a33deef52475ddf6164164.svg",
-    "main.36af7ac3.css.map": "/github-insight/static/css/main.36af7ac3.css.map",
-    "main.25b2752d.js.map": "/github-insight/static/js/main.25b2752d.js.map",
+    "main.2d93d1ae.css.map": "/github-insight/static/css/main.2d93d1ae.css.map",
+    "main.a6111f9b.js.map": "/github-insight/static/js/main.a6111f9b.js.map",
     "453.aad78720.chunk.js.map": "/github-insight/static/js/453.aad78720.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.36af7ac3.css",
-    "static/js/main.25b2752d.js"
+    "static/css/main.2d93d1ae.css",
+    "static/js/main.a6111f9b.js"
   ]
 }
