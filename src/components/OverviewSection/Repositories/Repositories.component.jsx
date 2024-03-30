@@ -6,6 +6,20 @@ import { log } from '../../../utils';
 
 import './Repositories.style.scss';
 
+const getNumberOfRepos = async ({ owner, ownerType, token }) => {
+  const response = await axios.get(`https://api.github.com/${ownerType === 'user' ? 'users' : 'orgs'}/${owner}/repos?per_page=1&page=1`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return +response.headers.link
+    ?.split(', ')
+    .map(url => url.split('; '))
+    .find(([_, rel]) => rel.includes('last'))
+    ?.[0]
+    .split('&page=')[1].replace('>', '') || 0;
+};
+
 const getNumberOfPRs = async ({ owner, token, repo, state }) => {
   const response = await axios.get(`https://api.github.com/repos/${owner}/${repo}/pulls?state=${state}&per_page=1&page=1`, {
     headers: {
@@ -18,36 +32,56 @@ const getNumberOfPRs = async ({ owner, token, repo, state }) => {
     .find(([_, rel]) => rel.includes('last'))
     ?.[0]
     .split('&page=')[1].replace('>', '') || 0;
-}
+};
 
-const getRepositories = async ({ owner, ownerType, token }, page, currentPaginatin) => {
+const MAX_NUMBER_OF_REPO_TO_FETCH = 1000;
+
+const NUM_OF_RECORDS_PER_PAGE = 10;
+
+let repositories = [];
+
+let globalFetchDataExecutionId = 0;
+
+const fetchRepositories = async (
+  { owner, ownerType, token },
+  setForbiddenError,
+  setFecthedRecords,
+) => {
+  if (!owner || !ownerType || !token) return;
+
+  const localFetchDataExecutionId = globalFetchDataExecutionId = Math.floor(Math.random() * 100);
+
+  repositories = [];
+
   try {
-    const pagination = {
-      ...currentPaginatin,
-      curr: page,
-    };
-    let records = [];
+    const totalNumberOfRepos = Math.min(
+      await getNumberOfRepos({ owner, ownerType, token }),
+      MAX_NUMBER_OF_REPO_TO_FETCH,
+    );
 
-    if (owner) {
-      let nextPageUrl = `https://api.github.com/${ownerType === 'user' ? 'users' : 'orgs'}/${owner}/repos?sort=updated&direction=desc&per_page=10&page=${page}`;
-      log({repoURL: nextPageUrl});
-      const response = await axios.get(nextPageUrl, {
+    // Check if a new loading operation is on going
+    if (localFetchDataExecutionId !== globalFetchDataExecutionId) {
+      log({ localFetchDataExecutionId, globalFetchDataExecutionId });
+      return;
+    }
+
+    const TOTAL_PAGES = Math.ceil(totalNumberOfRepos / NUM_OF_RECORDS_PER_PAGE);
+
+    for (let page = 1; page <= TOTAL_PAGES; page++) {
+      const url = `https://api.github.com/${ownerType === 'user' ? 'users' : 'orgs'}/${owner}/repos?sort=updated&direction=desc&per_page=${NUM_OF_RECORDS_PER_PAGE}&page=${page}`;
+      const response = await axios.get(url, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      response.headers.link
-        ?.split(', ')
-        .map(url => url.split('; '))
-        .reduce((acc, [url, rel]) => {
-          const relVal = rel.replace('rel=', '').replaceAll('"', '');
-          const page = url.split('&page=')[1].replace('>', '');
-          acc[relVal] = +page;
-          return acc;
-        }, pagination);
+      // Check if a new loading operation is on going
+      if (localFetchDataExecutionId !== globalFetchDataExecutionId) {
+        log({ localFetchDataExecutionId, globalFetchDataExecutionId });
+        return;
+      }
 
-      records = await Promise.all(response.data.map(async ({
+      const recordsPerPage = await Promise.all(response.data.map(async ({
         id, name, html_url, description, visibility, language, updated_at,
       }) => {
         const [numberOfOpenPRs, numberOfClosedPRs] = await Promise.all([
@@ -69,20 +103,29 @@ const getRepositories = async ({ owner, ownerType, token }, page, currentPaginat
           },
         };
       }));
+
+      // Check if a new loading operation is on going
+      if (localFetchDataExecutionId !== globalFetchDataExecutionId) {
+        log({ localFetchDataExecutionId, globalFetchDataExecutionId });
+        return;
+      }
+
+      // log({ recordsPerPageLen: recordsPerPage.length, recordsPerPage });
+
+      repositories.push(...recordsPerPage);
+      log({ repoFetched: repositories.length, done: false });
+      setFecthedRecords(repositories.length);
     }
 
-    return {
-      records,
-      pagination,
-    };
+    log({ repoFetched: repositories.length, done: true });
   } catch (error) {
     console.error('Error fetching repos:', error.message);
-    return error.response?.status || 500;
+    setFecthedRecords(0);
+    setForbiddenError(true);
   }
 };
 
-const RepositoryList = ({ records, selectedRepos, addRepo, removeRepo }) =>
-(
+const RepositoryList = ({ records, selectedRepos, addRepo, removeRepo }) => (
   <div className='repo-list'>
     {records?.map(({ id, ...rest }) =>
       <RepositoryItem
@@ -98,47 +141,79 @@ const RepositoryList = ({ records, selectedRepos, addRepo, removeRepo }) =>
 
 const Repositories = ({ auth, selectedRepos, addRepo, removeRepo }) => {
   const [forbidden, setForbiddenError] = useState(false);
-  const [repos, setRepos] = useState({
-    records: [],
-    pagination: {
-      first: 1,
-      last: 1,
-      prev: 0,
-      next: 1,
-      curr: 1,
-    },
+  const [paginatedRecords, setPaginatedRecords] = useState([]);
+  const [allSortedRepositories, setAllSortedRepositories] = useState([]);
+  const [pagination, setPagination] = useState({
+    first: 1,
+    last: 1,
+    prev: 0,
+    next: 1,
+    curr: 1,
+    perPage: 10,
   });
 
-  const changePage = async pageNumber => {
-    const result = await getRepositories(auth, pageNumber, repos.pagination);
-    if (typeof result === 'object') {
-      setForbiddenError(false);
-      setRepos(result);
-    } else {
-      console.log('getRepositories err:', result);
-      if (result === 403)
-        setForbiddenError(true);
-    }
+  useEffect(() => {
+    fetchRepositories(
+      auth,
+      setForbiddenError,
+      setFecthedRecords,
+    );
+  }, [auth]);
+
+  const setFecthedRecords = () => {
+    setAllSortedRepositories([...repositories]);
   };
 
   useEffect(() => {
-    changePage(1);
-  }, [auth]);
+
+    const totalPages = Math.ceil(allSortedRepositories.length / pagination.perPage);
+
+    setPagination({
+      ...pagination,
+      last: totalPages,
+      next: totalPages > 1 ? 2 : 1,
+    });
+
+    const startIndex = (pagination.curr - 1) * pagination.perPage;
+    const endIndex = startIndex + pagination.perPage;
+    setPaginatedRecords(allSortedRepositories.slice(startIndex, endIndex));
+  }, [allSortedRepositories]);
+
+  const changePage = pageNumber => {
+    if (pageNumber === pagination.curr) return;
+
+    setPagination({
+      ...pagination,
+      curr: pageNumber,
+      prev: pageNumber - 1,
+      next: pageNumber + 1,
+    });
+
+    const startIndex = (pageNumber - 1) * pagination.perPage;
+    const endIndex = startIndex + pagination.perPage;
+    setPaginatedRecords(allSortedRepositories.slice(startIndex, endIndex));
+  };
+
+  if (!auth.owner || !auth.ownerType || !auth.token)
+    return null;
 
   return (
-    <div className="repositories">
+    <div className='repositories'>
       <h3 className='section-title'>Repositories</h3>
       {
         forbidden
           ? <div className='forbidden'>You don't have access to this section</div>
           : <div>
             <RepositoryList
-              records={repos.records}
+              records={paginatedRecords}
               selectedRepos={selectedRepos}
               addRepo={addRepo}
               removeRepo={removeRepo}
             />
-            <ListPagination pagination={repos.pagination} changePage={changePage} />
+            <ListPagination
+              pagination={pagination}
+              changePage={changePage}
+            />
           </div>
       }
     </div>

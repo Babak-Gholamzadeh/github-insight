@@ -41,7 +41,6 @@ const repoColors = {
   },
 };
 
-
 const HomePage = () => {
   const [auth, setAuth] = useState({
     owner: '',

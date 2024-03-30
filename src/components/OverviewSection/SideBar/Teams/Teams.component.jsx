@@ -72,6 +72,7 @@ const getTeams = async (
     // Fetching teams data completed
   } catch (error) {
     console.error('Error fetching teams:', error.message);
+    setFecthedRecords(0);
     setForbiddenError(true);
   }
 };

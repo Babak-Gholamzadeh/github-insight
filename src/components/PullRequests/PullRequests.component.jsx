@@ -277,7 +277,10 @@ const PullRequests = ({ auth, loadPRsReq }) => {
       </div>
       <div className='visualization-section'>
         <PullRequestList records={paginatedRecords} />
-        <ListPagination pagination={pagination} changePage={changePage} />
+        <ListPagination
+          pagination={pagination}
+          changePage={changePage}
+        />
       </div>
     </div>
   );
