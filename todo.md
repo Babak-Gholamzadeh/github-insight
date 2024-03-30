@@ -1,10 +1,10 @@
-+ Avoid the browser to scroll (chrome) on canvas (alt + scroll)
-
 - When the canvas gets focued, the browser (chrome) gets scroll to make it completely visible
 
-- Deply the web page to be accessable via github url (gh_page)
-
 ---------------------
+
+- Load all the repositories at once to add sorting and search feature
+
+- canvas show outdated data with gray color tone
 
 - add a loading to the repository table
 

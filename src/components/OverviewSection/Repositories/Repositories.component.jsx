@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import RepositoryItem from './RepositoryItem/RepositoryItem.component';
 import ListPagination from '../../ListPagination/ListPagination.component';
 import axios from 'axios';
+import { log } from '../../../utils';
 
 import './Repositories.style.scss';
 
@@ -19,7 +20,7 @@ const getNumberOfPRs = async ({ owner, token, repo, state }) => {
     .split('&page=')[1].replace('>', '') || 0;
 }
 
-const getRepositories = async ({ owner, token }, page, currentPaginatin) => {
+const getRepositories = async ({ owner, ownerType, token }, page, currentPaginatin) => {
   try {
     const pagination = {
       ...currentPaginatin,
@@ -28,7 +29,8 @@ const getRepositories = async ({ owner, token }, page, currentPaginatin) => {
     let records = [];
 
     if (owner) {
-      let nextPageUrl = `https://api.github.com/users/${owner}/repos?sort=updated&direction=desc&type=all&per_page=10&page=${page}`;
+      let nextPageUrl = `https://api.github.com/${ownerType === 'user' ? 'users' : 'orgs'}/${owner}/repos?sort=updated&direction=desc&per_page=10&page=${page}`;
+      log({repoURL: nextPageUrl});
       const response = await axios.get(nextPageUrl, {
         headers: {
           Authorization: `Bearer ${token}`,
