@@ -1,16 +1,14 @@
-- When the canvas gets focued, the browser (chrome) gets scroll to make it completely visible
+
 
 ---------------------
 
 - Load all the repositories at once to add sorting and search feature
+- add a loading to the repository table
+- Show loading somewhere when change the page in repository table
 
 - canvas show outdated data with gray color tone
 
-- add a loading to the repository table
-
 - Handle error with expirad token
-
-- Show loading somewhere when change the page in repository table
 
 - Show the keyboard shortcuts somewhere on each canvas
 

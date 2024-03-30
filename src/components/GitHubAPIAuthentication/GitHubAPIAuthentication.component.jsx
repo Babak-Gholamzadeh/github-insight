@@ -154,7 +154,7 @@ const GitHubAPIAuthentication = ({ auth, setAuth }) => {
   }, [readyForSubmit]);
 
   return (
-    <div className="api-auth">
+    <div className='api-auth'>
       <form onSubmit={onSubmit} className='auth-container'>
         <div className='auth-element auth-owner'>
           <label className={`message ${ownerInputStatus.status}`}>{
@@ -163,8 +163,8 @@ const GitHubAPIAuthentication = ({ auth, setAuth }) => {
               <>
                 <a
                   href={ownerInputStatus.html_url}
-                  target="_blank"
-                  rel="noreferrer"
+                  target='_blank'
+                  rel='noreferrer'
                 >
                   {ownerInputStatus.name}
                 </a>
@@ -173,32 +173,40 @@ const GitHubAPIAuthentication = ({ auth, setAuth }) => {
               : ownerInputStatus.message
           }</label>
           <TextInput
-            id="owner"
-            name="owner"
-            placeholder="Enter the owner name"
+            id='owner'
+            name='owner'
+            placeholder='Enter the owner name (i.e. nodejs)'
             value={owner}
             onChange={onOwnerChange}
             className={ownerInputStatus.status}
           />
           <div className='note'>
-            Enter the name that is used in the GitHub URL of the owner (organization or user)
+            The GitHub username of the owner (organization or user)
           </div>
         </div>
         <div className='auth-element auth-token'>
           <label className={`message ${tokenInputStatus.status}`}>{tokenInputStatus.message}</label>
           <TextInput
-            id="token"
-            name="token"
-            type="password"
-            placeholder="Enter your access token"
+            id='token'
+            name='token'
+            type='password'
+            placeholder='Enter your access token'
             value={token}
             onChange={onTokenChange}
             className={tokenInputStatus.status}
           />
           <div className='note'>
-            Check out this links to see how to generate an access token for GitHub APIs:
-            <a href="https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens">Managing your personal access tokens</a>
-            <a href="https://docs.github.com/en/enterprise-cloud@latest/authentication/authenticating-with-saml-single-sign-on">Authenticating with SAML single sign-on</a>
+            <p>The required scopes:
+              <code>repo</code>,
+              <code>read:org</code>,
+              <code>read:user</code>,
+              <code>user:email</code>
+            </p>
+            <p>
+              Read more about generating access token for GitHub APIs:
+              <a href='https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens'>Managing your personal access tokens</a>
+              <a href='https://docs.github.com/en/enterprise-cloud@latest/authentication/authenticating-with-saml-single-sign-on'>Authenticating with SAML single sign-on</a>
+            </p>
           </div>
         </div>
         <Checkbox
