@@ -1115,7 +1115,6 @@ const BarChart = ({ NOW, records }) => {
     });
   }, [ctx, viewport]);
 
-
   useEffect(() => {
     log({ uf: `[records]: ${records.length}` });
     refPRs.current?.updatePRs(records);
@@ -1126,10 +1125,27 @@ const BarChart = ({ NOW, records }) => {
       <canvas
         tabIndex={0}
         ref={refCanvas}
+        // @FIXME: When the canvas gets focued, the browser (chrome) gets scroll to make it completely visible
         onMouseEnter={() => refCanvas.current.focus()}
         onMouseLeave={() => refCanvas.current.blur()}
-        onKeyDown={e => refKeyboard.current.setKeyState({ [e.key.toLowerCase()]: true })}
-        onKeyUp={e => refKeyboard.current.setKeyState({ [e.key.toLowerCase()]: false })}
+        onKeyDown={e => {
+          e.preventDefault();
+          const key = e.key.toLowerCase();
+          if (key === 'alt') {
+            refCanvas.current.onmousewheel = e => {
+              e.preventDefault();
+            };
+          }
+          refKeyboard.current.setKeyState({ [key]: true });
+        }}
+        onKeyUp={e => {
+          e.preventDefault();
+          const key = e.key.toLowerCase();
+          if (key === 'alt') {
+            refCanvas.current.onmousewheel = e => { };
+          }
+          refKeyboard.current.setKeyState({ [key]: false });
+        }}
         onWheel={e => refMouse.current.setScrollDelta(Math.sign(e.deltaY * -1))}
         onMouseDown={() => refMouse.current.setBtnState({ left: true })}
         onMouseUp={() => refMouse.current.setBtnState({ left: false })}

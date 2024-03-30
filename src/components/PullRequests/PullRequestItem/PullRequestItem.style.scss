@@ -8,6 +8,7 @@
 
   &:hover {
     background-color: #161b22;
+
     .pr-repo-color {
       width: 5px;
     }
@@ -29,7 +30,7 @@
   .pr-title {
     display: flex;
     flex-direction: column;
-    width: 100%;
+    width: 60%;
 
     .top-section {
       margin-bottom: 5px;
@@ -47,6 +48,8 @@
       .pr-link {
         color: #e6edf4;
         white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
 
         &:hover {
           color: #2e81f7;
@@ -77,9 +80,12 @@
 
   .pr-long-running {
     text-align: right;
-    width: 100%;
+    width: 40%;
     padding-right: 50px;
     font-weight: 200;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .pr-member-link {

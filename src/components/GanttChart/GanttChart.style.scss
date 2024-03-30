@@ -9,10 +9,11 @@
     width: 100%;
     height: 100%;
     border-radius: 10px;
+    transition: box-shadow .3s;
+    outline: none;
 
     &:focus {
-      outline: none;
-      box-shadow: 0 0 10px 5px #00000022;
+      box-shadow: 0 0 10px 5px #1f6feb14;
     }
   }
 }
