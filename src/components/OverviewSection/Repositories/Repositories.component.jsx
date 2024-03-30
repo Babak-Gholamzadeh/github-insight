@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import RepositoryItem from './RepositoryItem/RepositoryItem.component';
 import ListPagination from '../../ListPagination/ListPagination.component';
+import TextInput from '../../TextInput/TextInput.component';
 import axios from 'axios';
 import { log } from '../../../utils';
 
@@ -125,6 +126,33 @@ const fetchRepositories = async (
   }
 };
 
+const RepositoriesTools = ({ findRepo }) => {
+  const [findRepoText, setFindRepoText] = useState('');
+
+  const onChangeFindText = e => {
+    const { value } = e.target;
+    setFindRepoText(value);
+    findRepo(value.toLowerCase());
+  }
+
+  return (
+    <div className='repo-tools'>
+      <div className='repo-find'>
+        <TextInput
+          type='search'
+          placeholder='Find a repository…'
+          value={findRepoText}
+          onChange={onChangeFindText}
+          className='repo-find-input'
+        />
+      </div>
+      <div className='repo-sort'>
+        <div className='sort-button'>Sort</div>
+      </div>
+    </div>
+  );
+};
+
 const RepositoryList = ({ records, selectedRepos, addRepo, removeRepo }) => (
   <div className='repo-list'>
     {records?.map(({ id, ...rest }) =>
@@ -143,6 +171,7 @@ const Repositories = ({ auth, selectedRepos, addRepo, removeRepo }) => {
   const [forbidden, setForbiddenError] = useState(false);
   const [paginatedRecords, setPaginatedRecords] = useState([]);
   const [allSortedRepositories, setAllSortedRepositories] = useState([]);
+  const [filterRepoByName, setFilterRepoByName] = useState('');
   const [pagination, setPagination] = useState({
     first: 1,
     last: 1,
@@ -165,8 +194,11 @@ const Repositories = ({ auth, selectedRepos, addRepo, removeRepo }) => {
   };
 
   useEffect(() => {
+    const filteredList = filterRepoByName
+      ? allSortedRepositories.filter(({ name }) => name.toLowerCase().includes(filterRepoByName))
+      : allSortedRepositories;
 
-    const totalPages = Math.ceil(allSortedRepositories.length / pagination.perPage);
+    const totalPages = Math.ceil(filteredList.length / pagination.perPage);
 
     setPagination({
       ...pagination,
@@ -176,11 +208,15 @@ const Repositories = ({ auth, selectedRepos, addRepo, removeRepo }) => {
 
     const startIndex = (pagination.curr - 1) * pagination.perPage;
     const endIndex = startIndex + pagination.perPage;
-    setPaginatedRecords(allSortedRepositories.slice(startIndex, endIndex));
-  }, [allSortedRepositories]);
+    setPaginatedRecords(filteredList.slice(startIndex, endIndex));
+  }, [allSortedRepositories, filterRepoByName]);
 
   const changePage = pageNumber => {
     if (pageNumber === pagination.curr) return;
+
+    const filteredList = filterRepoByName
+      ? allSortedRepositories.filter(({ name }) => name.toLowerCase().includes(filterRepoByName))
+      : allSortedRepositories;
 
     setPagination({
       ...pagination,
@@ -191,7 +227,7 @@ const Repositories = ({ auth, selectedRepos, addRepo, removeRepo }) => {
 
     const startIndex = (pageNumber - 1) * pagination.perPage;
     const endIndex = startIndex + pagination.perPage;
-    setPaginatedRecords(allSortedRepositories.slice(startIndex, endIndex));
+    setPaginatedRecords(filteredList.slice(startIndex, endIndex));
   };
 
   if (!auth.owner || !auth.ownerType || !auth.token)
@@ -203,7 +239,8 @@ const Repositories = ({ auth, selectedRepos, addRepo, removeRepo }) => {
       {
         forbidden
           ? <div className='forbidden'>You don't have access to this section</div>
-          : <div>
+          : <>
+            <RepositoriesTools findRepo={setFilterRepoByName} />
             <RepositoryList
               records={paginatedRecords}
               selectedRepos={selectedRepos}
@@ -214,7 +251,7 @@ const Repositories = ({ auth, selectedRepos, addRepo, removeRepo }) => {
               pagination={pagination}
               changePage={changePage}
             />
-          </div>
+          </>
       }
     </div>
   );
