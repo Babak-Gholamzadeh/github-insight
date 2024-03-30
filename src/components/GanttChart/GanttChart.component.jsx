@@ -1365,7 +1365,9 @@ const GanttChart = ({ NOW, records }) => {
       <canvas
         tabIndex={0}
         ref={refCanvas}
-        onMouseEnter={() => refCanvas.current.focus()}
+        onMouseEnter={() => refCanvas.current.focus({
+          preventScroll: true
+        })}
         onMouseLeave={() => refCanvas.current.blur()}
         onKeyDown={e => {
           e.preventDefault();

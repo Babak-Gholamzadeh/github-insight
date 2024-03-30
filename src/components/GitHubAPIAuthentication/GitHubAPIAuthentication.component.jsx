@@ -27,7 +27,7 @@ const GitHubAPIAuthentication = ({ auth, setAuth }) => {
   });
   const [saveInfo, setSaveInfo] = useState(true);
   const [checking, setChecking] = useState(false);
-  const [submit, setSubmit] = useState({});
+  const [readyForSubmit, setReadyForSubmit] = useState(false);
 
   useEffect(() => {
     const owner = window.localStorage.getItem('owner');
@@ -70,13 +70,13 @@ const GitHubAPIAuthentication = ({ auth, setAuth }) => {
       }),
     ]);
 
-    await new Promise(res => setTimeout(res, 1000));
-
-
     console.log('ownerResponse.status:', ownerResponse.status);
     console.log('tokenResponse:', tokenResponse.status);
 
+    let shouldSubmit = true;
+
     if (ownerResponse.status === 'rejected') {
+      shouldSubmit = false;
       const statusCode = ownerResponse.reason.response?.status || 500;
       let errorMessage = '';
       switch (statusCode) {
@@ -101,6 +101,7 @@ const GitHubAPIAuthentication = ({ auth, setAuth }) => {
     }
 
     if (tokenResponse.status === 'rejected') {
+      shouldSubmit = false;
       const statusCode = tokenResponse.reason.response?.status || 500;
       let errorMessage = '';
       switch (statusCode) {
@@ -122,16 +123,14 @@ const GitHubAPIAuthentication = ({ auth, setAuth }) => {
       });
     }
 
-
     setChecking(false);
-    setSubmit({
-      owner,
-      ownerType,
-      token,
-    });
+    setReadyForSubmit(shouldSubmit);
   };
 
   useEffect(() => {
+    log({ readyForSubmit });
+    if (!readyForSubmit) return;
+
     if (ownerInputStatus.status !== INPUT_STATUS.SUCCESS || tokenInputStatus.status !== INPUT_STATUS.SUCCESS) {
       if (auth.owner || auth.ownerType || auth.token) {
         setAuth({});
@@ -145,9 +144,14 @@ const GitHubAPIAuthentication = ({ auth, setAuth }) => {
       window.localStorage.setItem('token', token);
     }
 
-    setAuth(submit);
+    setAuth({
+      owner,
+      ownerType,
+      token,
+    });
 
-  }, [submit]);
+    setReadyForSubmit(false);
+  }, [readyForSubmit]);
 
   return (
     <div className="api-auth">

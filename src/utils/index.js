@@ -6,7 +6,7 @@ export const log = msg =>
         .reduce(
           (acc, [label, value]) => ([
             ...acc,
-            `${label}: ${value}`,
+            `${label}: ${typeof value === 'object' ? JSON.stringify(value) : value}`,
           ]), [])
         .join(', ')
       : msg
@@ -172,3 +172,9 @@ export const isLightColor = hexColor => {
 
   return luminance > 0.5;
 };
+
+export const convertTextToLink = text =>
+  text?.replace(
+    /(https?:\/\/[^\s()]+)/g,
+    url => `<a target='_blank' rel='noreferrer' href='${url}'>${url}</a>`
+  ) ?? '';

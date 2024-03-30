@@ -1126,7 +1126,9 @@ const BarChart = ({ NOW, records }) => {
         tabIndex={0}
         ref={refCanvas}
         // @FIXME: When the canvas gets focued, the browser (chrome) gets scroll to make it completely visible
-        onMouseEnter={() => refCanvas.current.focus()}
+        onMouseEnter={() => refCanvas.current.focus({
+          preventScroll: true
+        })}
         onMouseLeave={() => refCanvas.current.blur()}
         onKeyDown={e => {
           e.preventDefault();

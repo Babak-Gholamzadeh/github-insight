@@ -1,11 +1,13 @@
 import Repositories from './Repositories/Repositories.component';
 import SideBar from './SideBar/SideBar.component';
+import { log } from '../../utils';
 
 import './OverviewSection.style.scss';
 
 const OverviewSection = ({ auth, selectedRepos, addRepo, removeRepo }) => {
   const { owner, ownerType, token } = auth;
   if (!owner || !ownerType || !token) return;
+  log({ auth });
 
   return (
     <div className='overview-section'>

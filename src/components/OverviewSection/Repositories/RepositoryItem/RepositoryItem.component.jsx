@@ -7,6 +7,7 @@ import {
   capitalizeSentence,
   getHumanReadableTimeAgo,
   getRandomColorWithName,
+  convertTextToLink,
 } from '../../../../utils';
 
 import './RepositoryItem.style.scss';
@@ -122,9 +123,10 @@ const RepositoryItem = ({
           </div>
         </div>
         <div className='second-section'>
-          <div className='repo-desc'>
-            {description}
-          </div>
+          <div
+            className='repo-desc'
+            dangerouslySetInnerHTML={{ __html: convertTextToLink(description) }}
+          ></div>
         </div>
         <div className='third-section'>
           {
