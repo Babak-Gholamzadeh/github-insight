@@ -1,0 +1,25 @@
+{
+  "files": {
+    "main.css": "/github-insight/static/css/main.7c52f71a.css",
+    "main.js": "/github-insight/static/js/main.d82a47b4.js",
+    "static/js/453.aad78720.chunk.js": "/github-insight/static/js/453.aad78720.chunk.js",
+    "static/media/git-pull-request-closed-svgrepo-com.svg": "/github-insight/static/media/git-pull-request-closed-svgrepo-com.3595e590f8862e0037c58a20f68f42d4.svg",
+    "static/media/git-pull-request-draft-svgrepo-com.svg": "/github-insight/static/media/git-pull-request-draft-svgrepo-com.fb21caeb81c0de9615bad58140e38c76.svg",
+    "static/media/members.svg": "/github-insight/static/media/members.31f8e48d7b8b136c6311486c93b27be1.svg",
+    "index.html": "/github-insight/index.html",
+    "static/media/git-pull-request-open-svgrepo-com.svg": "/github-insight/static/media/git-pull-request-open-svgrepo-com.09b45e8df7c22e2fbfbaf4bb563cfb36.svg",
+    "static/media/git-pull-request-svgrepo-com.svg": "/github-insight/static/media/git-pull-request-svgrepo-com.b642e7d0f45292daaca2841be25c3727.svg",
+    "static/media/git-merge-svgrepo-com.svg": "/github-insight/static/media/git-merge-svgrepo-com.c26b5990ee59df2a688a2c01d8785716.svg",
+    "static/media/close-sm-svgrepo-com.svg": "/github-insight/static/media/close-sm-svgrepo-com.0f73c809b71f14ae1dcfac19112acff8.svg",
+    "static/media/check-svgrepo-com.svg": "/github-insight/static/media/check-svgrepo-com.13fe514a71c87be489ada154c2eb0db0.svg",
+    "static/media/plus-svgrepo-com.svg": "/github-insight/static/media/plus-svgrepo-com.f0feaa3ab94280e9dd8d8db4606f122c.svg",
+    "static/media/minus-svgrepo-com.svg": "/github-insight/static/media/minus-svgrepo-com.a4f6a9e7f8a33deef52475ddf6164164.svg",
+    "main.7c52f71a.css.map": "/github-insight/static/css/main.7c52f71a.css.map",
+    "main.d82a47b4.js.map": "/github-insight/static/js/main.d82a47b4.js.map",
+    "453.aad78720.chunk.js.map": "/github-insight/static/js/453.aad78720.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.7c52f71a.css",
+    "static/js/main.d82a47b4.js"
+  ]
+}
