@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/github-insight/static/css/main.641eb40a.css",
-    "main.js": "/github-insight/static/js/main.3af7217c.js",
+    "main.css": "/github-insight/static/css/main.d612d745.css",
+    "main.js": "/github-insight/static/js/main.6ffe6fb2.js",
     "static/js/453.aad78720.chunk.js": "/github-insight/static/js/453.aad78720.chunk.js",
     "static/media/git-pull-request-closed-svgrepo-com.svg": "/github-insight/static/media/git-pull-request-closed-svgrepo-com.3595e590f8862e0037c58a20f68f42d4.svg",
     "static/media/git-pull-request-draft-svgrepo-com.svg": "/github-insight/static/media/git-pull-request-draft-svgrepo-com.fb21caeb81c0de9615bad58140e38c76.svg",
@@ -10,16 +10,17 @@
     "static/media/git-pull-request-open-svgrepo-com.svg": "/github-insight/static/media/git-pull-request-open-svgrepo-com.09b45e8df7c22e2fbfbaf4bb563cfb36.svg",
     "static/media/git-pull-request-svgrepo-com.svg": "/github-insight/static/media/git-pull-request-svgrepo-com.b642e7d0f45292daaca2841be25c3727.svg",
     "static/media/git-merge-svgrepo-com.svg": "/github-insight/static/media/git-merge-svgrepo-com.c26b5990ee59df2a688a2c01d8785716.svg",
+    "static/media/search-svgrepo-com.svg": "/github-insight/static/media/search-svgrepo-com.bf4c9008489516de4594.svg",
     "static/media/close-sm-svgrepo-com.svg": "/github-insight/static/media/close-sm-svgrepo-com.0f73c809b71f14ae1dcfac19112acff8.svg",
     "static/media/check-svgrepo-com.svg": "/github-insight/static/media/check-svgrepo-com.13fe514a71c87be489ada154c2eb0db0.svg",
     "static/media/plus-svgrepo-com.svg": "/github-insight/static/media/plus-svgrepo-com.f0feaa3ab94280e9dd8d8db4606f122c.svg",
     "static/media/minus-svgrepo-com.svg": "/github-insight/static/media/minus-svgrepo-com.a4f6a9e7f8a33deef52475ddf6164164.svg",
-    "main.641eb40a.css.map": "/github-insight/static/css/main.641eb40a.css.map",
-    "main.3af7217c.js.map": "/github-insight/static/js/main.3af7217c.js.map",
+    "main.d612d745.css.map": "/github-insight/static/css/main.d612d745.css.map",
+    "main.6ffe6fb2.js.map": "/github-insight/static/js/main.6ffe6fb2.js.map",
     "453.aad78720.chunk.js.map": "/github-insight/static/js/453.aad78720.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.641eb40a.css",
-    "static/js/main.3af7217c.js"
+    "static/css/main.d612d745.css",
+    "static/js/main.6ffe6fb2.js"
   ]
 }
