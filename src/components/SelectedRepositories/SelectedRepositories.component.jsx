@@ -100,6 +100,7 @@ const SelectedRepositories = ({ selectedRepos, removeRepo, submitLoadPRs, isRepo
       submitObject.maxNumberOfPRs = newValue;
       setRangeValue(newValue);
     } else {
+      submitObject.repos = [];
       submitObject.maxNumberOfPRs = 0;
       setRangeValue(RANGE_DEFAULT_VALUE);
     }

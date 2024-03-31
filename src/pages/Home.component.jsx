@@ -3,6 +3,7 @@ import GitHubAPIAuthentication from '../components/GitHubAPIAuthentication/GitHu
 import OverviewSection from '../components/OverviewSection/OverviewSection.component';
 import SelectedRepositories from '../components/SelectedRepositories/SelectedRepositories.component';
 import PullRequests from '../components/PullRequests/PullRequests.component';
+import { log } from '../utils';
 
 import './Home.style.scss';
 
@@ -41,7 +42,7 @@ const repoColors = {
   },
 };
 
-const HomePage = () => {
+const HomePage = ({ isFullScreen }) => {
   const [auth, setAuth] = useState({
     owner: '',
     ownerType: '',
@@ -53,6 +54,7 @@ const HomePage = () => {
   });
   const [selectedRepos, selectRepo] = useState([]);
   const [isRepoListFull, setRepoListFullState] = useState(false);
+  const [isRepoListEmpty, setRepoListEmptyState] = useState(true);
 
   const addRepo = repo => {
     if (isRepoListFull) return;
@@ -67,6 +69,8 @@ const HomePage = () => {
     ]);
     if (selectedRepos.length + 1 >= repoColors.colors.length)
       setRepoListFullState(true);
+    log({ setRepoListEmptyState: 'called' });
+    setRepoListEmptyState(false);
   };
 
   const removeRepo = repoId => {
@@ -79,9 +83,13 @@ const HomePage = () => {
     ]);
     console.log('selectedRepos:', selectedRepos);
     if (isRepoListFull) setRepoListFullState(false);
+    if (!selectedRepos.length) setRepoListEmptyState(true);
   };
 
   useEffect(() => {
+    repoColors.freeAllColors();
+    setRepoListFullState(false);
+    setRepoListEmptyState(true);
     selectRepo([]);
   }, [auth]);
 
@@ -92,18 +100,22 @@ const HomePage = () => {
         auth={auth}
         setAuth={setAuth} />
       <OverviewSection
+        isFullScreen={isFullScreen}
         auth={auth}
         selectedRepos={selectedRepos}
         addRepo={addRepo}
         removeRepo={removeRepo} />
       <SelectedRepositories
+        isFullScreen={isFullScreen}
         selectedRepos={selectedRepos}
         removeRepo={removeRepo}
         isRepoListFull={isRepoListFull}
         submitLoadPRs={submitLoadPRs} />
       <PullRequests
+        isFullScreen={isFullScreen}
         auth={auth}
-        loadPRsReq={loadPRsReq} />
+        loadPRsReq={loadPRsReq}
+        isRepoListEmpty={isRepoListEmpty} />
     </div>
   );
 };

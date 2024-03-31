@@ -108,6 +108,9 @@ const GitHubAPIAuthentication = ({ auth, setAuth }) => {
         case 401:
           errorMessage = 'This token is invalid';
           break;
+        case 403:
+          errorMessage = 'API rate limit exceeded for this token. Try after an hour or use another token';
+          break;
         default:
           errorMessage = 'There is an unexpected error. There might be some internet connection issue!';
       }

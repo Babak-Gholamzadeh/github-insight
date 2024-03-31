@@ -52,7 +52,7 @@ const BG_HIGHLIGHT_COLORS = (op) => [
   `rgba(85, 107, 47, ${op})`,     // Dark Olive Green
 ];
 
-const BarChart = ({ NOW, records, loadPRsReq }) => {
+const BarChart = ({ isFullScreen, NOW, records, loadPRsReq }) => {
   log({ ComponentRerendered: 'GanttChart' });
   const refWrapper = useRef();
   const refCanvas = useRef();
@@ -63,11 +63,11 @@ const BarChart = ({ NOW, records, loadPRsReq }) => {
   const refMouse = useRef();
   const refTimeline = useRef();
   const refPRs = useRef();
-
   const [viewport, setViewport] = useState({ size: [0, 0] });
   const [ctx, setCtx] = useState();
+  const TIMELINE_WIDTH = 60;
 
-  const setupViewport = () => {
+  const setCanvasSize = () => {
     const wrapperStyle = window.getComputedStyle(refWrapper.current);
     const paddingTop = parseInt(wrapperStyle.getPropertyValue('padding-top'));
     const paddingRight = parseInt(wrapperStyle.getPropertyValue('padding-right'));
@@ -76,6 +76,11 @@ const BarChart = ({ NOW, records, loadPRsReq }) => {
     const canvas = refCanvas.current;
     canvas.width = refWrapper.current.clientWidth - (paddingRight + paddingLeft);
     canvas.height = refWrapper.current.clientHeight - (paddingTop + paddingBottom);
+  };
+
+  const setupViewport = () => {
+    setCanvasSize();
+    const canvas = refCanvas.current;
     setViewport({
       size: [canvas.width, canvas.height],
     });
@@ -101,7 +106,6 @@ const BarChart = ({ NOW, records, loadPRsReq }) => {
     log({ uf: `[ctx, viewport]: ${ctx}, ${viewport}` });
     if (!ctx) return;
     const scene = refScene.current;
-    const TIMELINE_WIDTH = 60;
     const INIT_MS_HEIGHT = .00000002;
     // Camera
     const camera = refCamera.current = scene.createCamera({
@@ -167,13 +171,16 @@ const BarChart = ({ NOW, records, loadPRsReq }) => {
           this.frameCount = 0;
           this.sumDt = 0;
         }
+
+        const camSize = camera.getSize();
+
+        this.transform.position = [
+          -camSize[0] / 2 + 2,
+          camSize[1] / 2 - 12,
+        ];
       },
     }, {
       tag: 'fps',
-      position: [
-        -camera.getSize()[0] / 2 + 2,
-        camera.getSize()[1] / 2 - 12,
-      ],
     });
 
     // Timeline
@@ -195,22 +202,34 @@ const BarChart = ({ NOW, records, loadPRsReq }) => {
             (changeScale > 0 && this.currMSHeight < MAX_MS_HEIGHT) ||
             (changeScale < 0 && this.currMSHeight > MIN_MS_HEIGHT)
           ) {
-            this.currMSHeight = Math.max(Math.min(this.currMSHeight + this.currMSHeight * changeScale, MAX_MS_HEIGHT), MIN_MS_HEIGHT);
+            this.currMSHeight = Math.max(
+              Math.min(this.currMSHeight + this.currMSHeight * changeScale, MAX_MS_HEIGHT),
+              MIN_MS_HEIGHT,
+            );
             const mousePos = mouse.getPositionOnScene();
-            const CAMERA_LOWEST_BOTTOM = viewport.size[1] / 2;
+            const camSize = camera.getSize();
+            const CAMERA_LOWEST_BOTTOM = camSize[1] / 2;
             camera.transform.position[1] = Math.max(
               camera.transform.position[1] + mousePos[1] * changeScale,
               CAMERA_LOWEST_BOTTOM,
             );
           }
         }
+
+        const camSize = camera.getSize();
+
+        this.size = [
+          TIMELINE_WIDTH,
+          camSize[1],
+        ];
+
+        this.transform.position = [
+          camSize[0] / 2,
+          -camSize[1] / 2,
+        ];
       },
     }, {
       tag: 'timeline',
-      position: [
-        camera.getSize()[0] / 2,
-        -camera.getSize()[1] / 2,
-      ],
     });
 
     // Timeline > background
@@ -1126,8 +1145,37 @@ const BarChart = ({ NOW, records, loadPRsReq }) => {
     refPRs.current?.updatePRs(records);
   }, [records]);
 
+  useEffect(() => {
+    // Update viewport size
+    if (!refCamera.current) return;
+
+    setCanvasSize();
+
+    const canvas = refCanvas.current;
+    const newViewport = {
+      size: [canvas.width, canvas.height],
+    };
+
+    log({ newViewport: newViewport.size });
+
+    const camera = refCamera.current;
+    camera.viewport = newViewport;
+
+    const camSize = camera.getSize();
+    camera.transform.position[0] = Math.min(
+      camera.transform.position[0],
+      -camSize[0] / 2 + TIMELINE_WIDTH,
+    );
+    camera.transform.position[1] = Math.max(
+      camera.transform.position[1],
+      camSize[1] / 2,
+    );
+
+    refKeyboard.current.setKeyState({ alt: false });
+  }, [isFullScreen]);
+
   return (
-    <div ref={refWrapper} className='bar-chart-wrapper'>
+    <div ref={refWrapper} className={'bar-chart-wrapper' + (isFullScreen ? ' full-screen' : '')}>
       <canvas
         tabIndex={0}
         ref={refCanvas}

@@ -181,7 +181,7 @@ const PullRequestList = ({ records, loadPRsReq }) => {
   );
 };
 
-const PullRequests = ({ auth, loadPRsReq }) => {
+const PullRequests = ({ isFullScreen, auth, loadPRsReq, isRepoListEmpty }) => {
   const [NOW, setNOW] = useState(0);
   const [paginatedRecords, setPaginatedRecords] = useState([]);
   const [allSortedPaginationRecordsByLR, setAllSortedPaginationRecordsByLR] = useState([]);
@@ -261,9 +261,9 @@ const PullRequests = ({ auth, loadPRsReq }) => {
     setPaginatedRecords(visibleRecords.slice(startIndex, endIndex));
   };
 
-  log({ maxNumberOfPRs: loadPRsReq?.maxNumberOfPRs });
+  log({ maxNumberOfPRs: loadPRsReq?.maxNumberOfPRs, isRepoListEmpty, repoLens: loadPRsReq?.repos.length });
 
-  if (!auth.owner || !auth.ownerType || !auth.token || !loadPRsReq?.maxNumberOfPRs)
+  if (!auth.owner || !auth.ownerType || !auth.token || isRepoListEmpty || !loadPRsReq?.repos.length)
     return null;
 
   return (
@@ -271,12 +271,14 @@ const PullRequests = ({ auth, loadPRsReq }) => {
       <h3 className='section-title'>Long-running Pull Requests</h3>
       <div className='visualization-section'>
         <BarChart
+          isFullScreen={isFullScreen}
           NOW={NOW}
           records={allSortedRecordsByLR}
           loadPRsReq={loadPRsReq} />
       </div>
       <div className='visualization-section'>
         <GanttChart
+          isFullScreen={isFullScreen}
           NOW={NOW}
           records={allSortedRecordsByCA}
           loadPRsReq={loadPRsReq} />
