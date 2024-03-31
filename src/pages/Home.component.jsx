@@ -8,16 +8,16 @@ import './Home.style.scss';
 
 const repoColors = {
   colors: [
-    ['#FF0000', false], // Red
-    ['#00FF00', false], // Lime
-    ['#0000FF', false], // Blue
-    ['#FFFF00', false], // Yellow
-    ['#FF00FF', false], // Fuchsia
     ['#00FFFF', false], // Cyan
-    ['#FFA500', false], // Orange
+    ['#FF00FF', false], // Fuchsia
+    ['#00FF00', false], // Green
     ['#FF4500', false], // OrangeRed
+    ['#FFFF00', false], // Yellow
+    ['#0000FF', false], // Blue
+    ['#FF0000', false], // Red
     ['#8A2BE2', false], // BlueViolet
-    ['#FF69B4', false], // HotPink
+    ['#FFA500', false], // Orange
+    ['#f799a2', false], // Salmon Pink
     ['#8B4513', false], // Dark Brown
     ['#6B8E23', false], // OliveDrab
     ['#4682B4', false], // SteelBlue

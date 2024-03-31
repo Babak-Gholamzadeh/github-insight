@@ -6,7 +6,6 @@ Repository table:
 - add a loading to the repository table
 
 Canvas:
-- canvas show outdated data with gray color tone
 - Show the keyboard shortcuts somewhere on each canvas
 - Hold ctrl, then the mouse becomes pointer and when clicking on a PR on charts, to opens the page for that PR
 - Fix the track scaling on the bar chart to stick to the mouse position
