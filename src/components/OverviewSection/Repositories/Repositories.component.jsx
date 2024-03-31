@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+/* eslint-disable default-case */
+import { useEffect, useState, useRef } from 'react';
 import RepositoryItem from './RepositoryItem/RepositoryItem.component';
 import ListPagination from '../../ListPagination/ListPagination.component';
 import TextInput from '../../TextInput/TextInput.component';
@@ -126,14 +127,34 @@ const fetchRepositories = async (
   }
 };
 
-const RepositoriesTools = ({ findRepo }) => {
+const SORT_BY = {
+  LAST_UPDATED: 0,
+  OPEN_PRS: 1,
+  CLOSED_PRS: 2,
+  TOTAL_PRS: 3,
+  NAME: 4,
+  PROG_LANG: 5,
+};
+
+const RepositoriesTools = ({ findRepo, sortRepo }) => {
   const [findRepoText, setFindRepoText] = useState('');
+  const [sortMenuVisiblity, setSortMenuVisiblity] = useState(false);
+  const [selectedSort, setSelectedSort] = useState(SORT_BY.LAST_UPDATED);
+  const refSort = useRef();
 
   const onChangeFindText = e => {
     const { value } = e.target;
     setFindRepoText(value);
     findRepo(value.toLowerCase());
-  }
+  };
+
+  const onChangeSort = e => {
+    const sortBy = +e.target.getAttribute('data-sort-by');
+    log({ sortBy });
+    setSelectedSort(sortBy);
+    setSortMenuVisiblity(false);
+    sortRepo(sortBy);
+  };
 
   return (
     <div className='repo-tools'>
@@ -147,9 +168,47 @@ const RepositoriesTools = ({ findRepo }) => {
         />
       </div>
       <div className='repo-sort'>
-        <div className='sort-button'>Sort</div>
+        <div className='sort-button'
+          ref={refSort}
+          onKeyDown={() => log({ keyUp: 1 })}
+          onClick={() => {
+            refSort.current.focus();
+            setSortMenuVisiblity(!sortMenuVisiblity);
+          }}>
+          Sort</div>
+        <ul className={'sort-menu' + (sortMenuVisiblity ? ' show' : '')}>
+          <li className='sort-menu-item select-order'>
+            Select order
+            <span className='sort-menu-close-button'
+              onClick={() => setSortMenuVisiblity(false)}></span>
+          </li>
+          <li className={'sort-menu-item' + (selectedSort === SORT_BY.LAST_UPDATED ? ' selected' : '')}
+            data-sort-by={SORT_BY.LAST_UPDATED}
+            onClick={onChangeSort}>
+            Last Updated</li>
+          <li className={'sort-menu-item' + (selectedSort === SORT_BY.OPEN_PRS ? ' selected' : '')}
+            data-sort-by={SORT_BY.OPEN_PRS}
+            onClick={onChangeSort}>
+            Number of Open PRs</li>
+          <li className={'sort-menu-item' + (selectedSort === SORT_BY.CLOSED_PRS ? ' selected' : '')}
+            data-sort-by={SORT_BY.CLOSED_PRS}
+            onClick={onChangeSort}>
+            Number of Closed PRs</li>
+          <li className={'sort-menu-item' + (selectedSort === SORT_BY.TOTAL_PRS ? ' selected' : '')}
+            data-sort-by={SORT_BY.TOTAL_PRS}
+            onClick={onChangeSort}>
+            Number of Total PRs</li>
+          <li className={'sort-menu-item' + (selectedSort === SORT_BY.NAME ? ' selected' : '')}
+            data-sort-by={SORT_BY.NAME}
+            onClick={onChangeSort}>
+            Name</li>
+          <li className={'sort-menu-item' + (selectedSort === SORT_BY.PROG_LANG ? ' selected' : '')}
+            data-sort-by={SORT_BY.PROG_LANG}
+            onClick={onChangeSort}>
+            Programming Language</li>
+        </ul>
       </div>
-    </div>
+    </div >
   );
 };
 
@@ -169,9 +228,11 @@ const RepositoryList = ({ records, selectedRepos, addRepo, removeRepo }) => (
 
 const Repositories = ({ auth, selectedRepos, addRepo, removeRepo }) => {
   const [forbidden, setForbiddenError] = useState(false);
-  const [paginatedRecords, setPaginatedRecords] = useState([]);
-  const [allSortedRepositories, setAllSortedRepositories] = useState([]);
+  const [allFetchedRepositories, setAllFetchedRepositories] = useState([]);
+  const [filteredAndSortedRepos, setFilteredAndSortedRepos] = useState([]);
   const [filterRepoByName, setFilterRepoByName] = useState('');
+  const [sortRepoBy, setSortRepoBy] = useState(SORT_BY.LAST_UPDATED);
+  const [paginatedRecords, setPaginatedRecords] = useState([]);
   const [pagination, setPagination] = useState({
     first: 1,
     last: 1,
@@ -190,15 +251,34 @@ const Repositories = ({ auth, selectedRepos, addRepo, removeRepo }) => {
   }, [auth]);
 
   const setFecthedRecords = () => {
-    setAllSortedRepositories([...repositories]);
+    setAllFetchedRepositories([...repositories]);
   };
 
   useEffect(() => {
-    const filteredList = filterRepoByName
-      ? allSortedRepositories.filter(({ name }) => name.toLowerCase().includes(filterRepoByName))
-      : allSortedRepositories;
+    setFilteredAndSortedRepos(
+      allFetchedRepositories
+        .filter(({ name }) => name.toLowerCase().includes(filterRepoByName))
+        .sort((a, b) => {
+          switch (sortRepoBy) {
+            case SORT_BY.OPEN_PRS:
+              return b.PRs.open - a.PRs.open;
+            case SORT_BY.CLOSED_PRS:
+              return b.PRs.closed - a.PRs.closed;
+            case SORT_BY.TOTAL_PRS:
+              return b.PRs.total - a.PRs.total;
+            case SORT_BY.NAME:
+              return a.name.localeCompare(b.name);
+            case SORT_BY.PROG_LANG:
+              return a.language ? a.language.localeCompare(b.language) : 1;
+            default: // SORT_BY.LAST_UPDATED
+              return b.updated_at - a.updated_at;
+          }
+        })
+    );
+  }, [allFetchedRepositories, filterRepoByName, sortRepoBy]);
 
-    const totalPages = Math.ceil(filteredList.length / pagination.perPage);
+  useEffect(() => {
+    const totalPages = Math.ceil(filteredAndSortedRepos.length / pagination.perPage);
 
     setPagination({
       ...pagination,
@@ -208,15 +288,11 @@ const Repositories = ({ auth, selectedRepos, addRepo, removeRepo }) => {
 
     const startIndex = (pagination.curr - 1) * pagination.perPage;
     const endIndex = startIndex + pagination.perPage;
-    setPaginatedRecords(filteredList.slice(startIndex, endIndex));
-  }, [allSortedRepositories, filterRepoByName]);
+    setPaginatedRecords(filteredAndSortedRepos.slice(startIndex, endIndex));
+  }, [filteredAndSortedRepos]);
 
   const changePage = pageNumber => {
     if (pageNumber === pagination.curr) return;
-
-    const filteredList = filterRepoByName
-      ? allSortedRepositories.filter(({ name }) => name.toLowerCase().includes(filterRepoByName))
-      : allSortedRepositories;
 
     setPagination({
       ...pagination,
@@ -227,7 +303,7 @@ const Repositories = ({ auth, selectedRepos, addRepo, removeRepo }) => {
 
     const startIndex = (pageNumber - 1) * pagination.perPage;
     const endIndex = startIndex + pagination.perPage;
-    setPaginatedRecords(filteredList.slice(startIndex, endIndex));
+    setPaginatedRecords(filteredAndSortedRepos.slice(startIndex, endIndex));
   };
 
   if (!auth.owner || !auth.ownerType || !auth.token)
@@ -240,7 +316,9 @@ const Repositories = ({ auth, selectedRepos, addRepo, removeRepo }) => {
         forbidden
           ? <div className='forbidden'>You don't have access to this section</div>
           : <>
-            <RepositoriesTools findRepo={setFilterRepoByName} />
+            <RepositoriesTools
+              findRepo={setFilterRepoByName}
+              sortRepo={setSortRepoBy} />
             <RepositoryList
               records={paginatedRecords}
               selectedRepos={selectedRepos}

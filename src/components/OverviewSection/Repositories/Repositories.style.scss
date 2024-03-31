@@ -16,6 +16,7 @@
     .repo-find {
       width: 100%;
       margin-right: 10px;
+
       .repo-find-input {
         background-color: transparent;
         background-image: url('/assets/images/search-svgrepo-com.svg');
@@ -27,32 +28,132 @@
     }
 
     .repo-sort {
-      border: 1px solid #2c3239;
-      border-radius: 5px;
-      background-color: #21262d;
-      color: #c9d1d9;
-      padding: 5px 16px;
-      font-size: 14px;
-      user-select: none;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      transition: background-color .2s;
+      position: relative;
 
-      &::after {
-        content: '';
-        width: 8px;
-        height: 8px;
-        border: 4px solid;
-        border-color: #a7aeb6 transparent transparent transparent;
-        margin-left: 6px;
-        box-sizing: border-box;
-        margin-top: 8px;
+      .sort-button {
+        border: 1px solid #2c3239;
+        border-radius: 5px;
+        background-color: #21262d;
+        color: #c9d1d9;
+        padding: 5px 16px;
+        font-size: 14px;
+        user-select: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        transition: background-color .2s;
+        height: 32px;
+
+        &::after {
+          content: '';
+          width: 8px;
+          height: 8px;
+          border: 4px solid;
+          border-color: #a7aeb6 transparent transparent transparent;
+          margin-left: 6px;
+          box-sizing: border-box;
+          margin-top: 8px;
+        }
+
+        &:hover {
+          background-color: #292e36;
+        }
       }
 
-      &:hover {
-        background-color: #292e36;
+      .sort-menu {
+        position: absolute;
+        background-color: #161b22;
+        right: 0;
+        z-index: 1;
+        user-select: none;
+        list-style-type: none;
+        min-width: 300px;
+        border: 1px solid #282d34;
+        border-radius: 7px;
+        box-shadow: 0 5px 10px 3px #0006;
+        opacity: 0;
+        pointer-events: none;
+        top: 33px;
+        transition: top .3s;
+
+        &.show {
+          transition: top .3s, opacity .1s;
+          opacity: 1;
+          pointer-events: all;
+          top: 38px;
+        }
+
+        .sort-menu-item {
+          width: 100%;
+          font-size: 12px;
+          line-height: 18px;
+          border-bottom: 1px solid #282d34;
+          padding: 7px 16px 7px 40px;
+          white-space: nowrap;
+          cursor: pointer;
+          font-weight: 400;
+
+          &:hover {
+            background-color: #393f47;
+          }
+
+          &.selected {
+            background-color: #393f47;
+            position: relative;
+
+            &::before {
+              content: '';
+              position: absolute;
+              left: 16px;
+              top: 8px;
+              width: 16px;
+              height: 16px;
+              background-color: transparent;
+              background-image: url('/assets/images/check-svgrepo-com.svg');
+              background-size: cover;
+              background-position: center;
+              background-repeat: no-repeat;
+            }
+          }
+
+          &:last-child {
+            border-bottom: unset;
+          }
+
+          &.select-order {
+            padding-left: 16px;
+            padding-right: 8px;
+            user-select: auto;
+            cursor: text;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            &:hover {
+              background-color: unset;
+            }
+
+            .sort-menu-close-button {
+              display: block;
+              width: 16px;
+              height: 16px;
+              background-image: url('/assets/images/icons8-close.svg');
+              background-size: cover;
+              background-position: center;
+              background-repeat: no-repeat;
+              opacity: .5;
+              cursor: pointer;
+
+              &:hover {
+                opacity: 1;
+              }
+            }
+          }
+        }
+
       }
+
     }
   }
 

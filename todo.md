@@ -3,9 +3,8 @@
 ---------------------
 
 Repository table:
-- Load all the repositories at once to add sorting and search feature
++ Load all the repositories at once to add sorting and search feature
 - add a loading to the repository table
-- Show loading somewhere when change the page in repository table
 
 Canvas:
 - Show the keyboard shortcuts somewhere on each canvas
