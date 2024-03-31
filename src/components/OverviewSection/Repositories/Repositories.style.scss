@@ -16,6 +16,24 @@
     .repo-find {
       width: 100%;
       margin-right: 10px;
+      position: relative;
+      overflow: hidden;
+
+      .repo-loading-progress {
+        position: absolute;
+        height: 100%;
+        width: 100%;
+        top: 0;
+        left: 0;
+        border-radius: 6px 0 0 6px;
+        background-color: #ffffff0d;
+        pointer-events: none;
+        transition: width .5s, opacity .5s;
+
+        &.progress-completed {
+          opacity: 0;
+        }
+      }
 
       .repo-find-input {
         background-color: transparent;

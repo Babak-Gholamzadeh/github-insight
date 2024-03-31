@@ -3,7 +3,7 @@
 ---------------------
 
 Repository table:
-- add a loading to the repository table
++ add a loading to the repository table
 
 Canvas:
 - Show the keyboard shortcuts somewhere on each canvas

@@ -48,6 +48,7 @@ const fetchRepositories = async (
   { owner, ownerType, token },
   setForbiddenError,
   setFecthedRecords,
+  setProgressPercentage,
 ) => {
   if (!owner || !ownerType || !token) return;
 
@@ -117,12 +118,14 @@ const fetchRepositories = async (
       repositories.push(...recordsPerPage);
       log({ repoFetched: repositories.length, done: false });
       setFecthedRecords(repositories.length);
+      setProgressPercentage(Math.round(repositories.length / totalNumberOfRepos * 100));
     }
 
     log({ repoFetched: repositories.length, done: true });
   } catch (error) {
     console.error('Error fetching repos:', error.message);
     setFecthedRecords(0);
+    setProgressPercentage(0);
     setForbiddenError(true);
   }
 };
@@ -136,7 +139,7 @@ const SORT_BY = {
   PROG_LANG: 5,
 };
 
-const RepositoriesTools = ({ findRepo, sortRepo }) => {
+const RepositoriesTools = ({ progressPercentage, findRepo, sortRepo, }) => {
   const [findRepoText, setFindRepoText] = useState('');
   const [sortMenuVisiblity, setSortMenuVisiblity] = useState(false);
   const [selectedSort, setSelectedSort] = useState(SORT_BY.LAST_UPDATED);
@@ -159,6 +162,9 @@ const RepositoriesTools = ({ findRepo, sortRepo }) => {
   return (
     <div className='repo-tools'>
       <div className='repo-find'>
+        <div
+          className={'repo-loading-progress' + (progressPercentage === 100 ? ' progress-completed' : '')}
+          style={{ width: `${progressPercentage}%` }}></div>
         <TextInput
           type='search'
           placeholder='Find a repository…'
@@ -241,12 +247,14 @@ const Repositories = ({ auth, selectedRepos, addRepo, removeRepo }) => {
     curr: 1,
     perPage: 10,
   });
+  const [progressPercentage, setProgressPercentage] = useState(0);
 
   useEffect(() => {
     fetchRepositories(
       auth,
       setForbiddenError,
       setFecthedRecords,
+      setProgressPercentage,
     );
   }, [auth]);
 
@@ -317,6 +325,7 @@ const Repositories = ({ auth, selectedRepos, addRepo, removeRepo }) => {
           ? <div className='forbidden'>You don't have access to this section</div>
           : <>
             <RepositoriesTools
+              progressPercentage={progressPercentage}
               findRepo={setFilterRepoByName}
               sortRepo={setSortRepoBy} />
             <RepositoryList
