@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/github-insight/static/css/main.cb509d53.css",
-    "main.js": "/github-insight/static/js/main.f800a4bb.js",
+    "main.js": "/github-insight/static/js/main.50defb02.js",
     "static/js/453.aad78720.chunk.js": "/github-insight/static/js/453.aad78720.chunk.js",
     "static/media/git-pull-request-closed-svgrepo-com.svg": "/github-insight/static/media/git-pull-request-closed-svgrepo-com.3595e590f8862e0037c58a20f68f42d4.svg",
     "static/media/icons8-close.svg": "/github-insight/static/media/icons8-close.970cab7f452ccab3dbd2.svg",
@@ -17,11 +17,11 @@
     "static/media/plus-svgrepo-com.svg": "/github-insight/static/media/plus-svgrepo-com.f0feaa3ab94280e9dd8d8db4606f122c.svg",
     "static/media/minus-svgrepo-com.svg": "/github-insight/static/media/minus-svgrepo-com.a4f6a9e7f8a33deef52475ddf6164164.svg",
     "main.cb509d53.css.map": "/github-insight/static/css/main.cb509d53.css.map",
-    "main.f800a4bb.js.map": "/github-insight/static/js/main.f800a4bb.js.map",
+    "main.50defb02.js.map": "/github-insight/static/js/main.50defb02.js.map",
     "453.aad78720.chunk.js.map": "/github-insight/static/js/453.aad78720.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.cb509d53.css",
-    "static/js/main.f800a4bb.js"
+    "static/js/main.50defb02.js"
   ]
 }
