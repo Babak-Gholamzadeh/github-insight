@@ -173,10 +173,10 @@ const fetchAllPullRequests = async (
   }
 };
 
-const PullRequestList = ({ records }) => {
+const PullRequestList = ({ records, loadPRsReq }) => {
   return (
     <div className='pr-list'>
-      {records?.map(({ id, ...rest }) => <PullRequestItem {...rest} key={id} />)}
+      {records?.map(({ id, ...rest }) => <PullRequestItem loadPRsReq={loadPRsReq} {...rest} key={id} />)}
     </div>
   );
 };
@@ -270,13 +270,21 @@ const PullRequests = ({ auth, loadPRsReq }) => {
     <div className="pull-requests">
       <h3 className='section-title'>Long-running Pull Requests</h3>
       <div className='visualization-section'>
-        <BarChart records={allSortedRecordsByLR} NOW={NOW} />
+        <BarChart
+          NOW={NOW}
+          records={allSortedRecordsByLR}
+          loadPRsReq={loadPRsReq} />
       </div>
       <div className='visualization-section'>
-        <GanttChart records={allSortedRecordsByCA} NOW={NOW} />
+        <GanttChart
+          NOW={NOW}
+          records={allSortedRecordsByCA}
+          loadPRsReq={loadPRsReq} />
       </div>
       <div className='visualization-section'>
-        <PullRequestList records={paginatedRecords} />
+        <PullRequestList
+          records={paginatedRecords}
+          loadPRsReq={loadPRsReq} />
         <ListPagination
           pagination={pagination}
           changePage={changePage}

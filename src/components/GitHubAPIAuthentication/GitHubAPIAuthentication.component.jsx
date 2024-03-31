@@ -118,7 +118,6 @@ const GitHubAPIAuthentication = ({ auth, setAuth }) => {
     } else {
       setTokenInputStatus({
         status: INPUT_STATUS.SUCCESS,
-        // @FIXME: Expiration time is undefined
         message: `Token is valid`,
       });
     }

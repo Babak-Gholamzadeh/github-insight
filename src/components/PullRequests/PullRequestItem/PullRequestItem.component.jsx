@@ -1,4 +1,5 @@
 import draftPullRequestIcon from '../../../assets/images/git-pull-request-draft-svgrepo-com.svg';
+import { useEffect, useState } from 'react';
 import openPullRequestIcon from '../../../assets/images/git-pull-request-open-svgrepo-com.svg';
 import mergedPullRequestIcon from '../../../assets/images/git-merge-svgrepo-com.svg';
 import closedPullRequestIcon from '../../../assets/images/git-pull-request-closed-svgrepo-com.svg';
@@ -10,6 +11,7 @@ import {
 import './PullRequestItem.style.scss';
 
 const PullRequestItem = ({
+  loadPRsReq,
   state,
   title,
   html_url,
@@ -20,9 +22,20 @@ const PullRequestItem = ({
   created_at,
   closed_at,
 }) => {
+  const [isLoadStopped, setLoadStopped] = useState(false);
+
+  useEffect(() => {
+    const tId = setInterval(() => {
+      setLoadStopped(loadPRsReq.loadState.isStopped);
+    }, 100);
+    return () => clearInterval(tId);
+  }, [loadPRsReq]);
+
   return (
     <div className='pr-item'>
-      <div className='pr-repo-color' style={{ backgroundColor: loadRepo.color }}></div>
+      <div
+        className={'pr-repo-color' + (isLoadStopped ? ' load-stopped' : '')}
+        style={{ backgroundColor: loadRepo.color }}></div>
       <div className='pr-title'>
         <div className='top-section'>
           <img src={

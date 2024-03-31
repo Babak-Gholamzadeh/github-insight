@@ -62,7 +62,7 @@ const BG_HIGHLIGHT_COLORS = (op) => [
   `rgba(85, 107, 47, ${op})`,     // Dark Olive Green
 ];
 
-const GanttChart = ({ NOW, records }) => {
+const GanttChart = ({ NOW, records, loadPRsReq }) => {
   log({ ComponentRerendered: 'GanttChart' });
   const refWrapper = useRef();
   const refCanvas = useRef();
@@ -1123,7 +1123,7 @@ const GanttChart = ({ NOW, records }) => {
         }
       },
       updatePRs(records) {
-        log({ recordsLen: records.length });
+        log({ GanttRecordsLen: records.length });
 
         this.objects = [];
         this.trackOccupancy.empty();
@@ -1145,6 +1145,7 @@ const GanttChart = ({ NOW, records }) => {
             filterStatus: record.filterStatus,
             state: record.state,
             x, w,
+            grayTonePercentage: 0,
             update(dt) {
               this.size = [
                 w * timeline.currMSWidth,
@@ -1166,6 +1167,15 @@ const GanttChart = ({ NOW, records }) => {
               } else if (this.onMouseOut()) {
                 // this.backgroundColor = `rgba(${PR_STATE_COLORS[record.state]})`;
                 this.toolTip?.hide();
+              }
+              
+              if (loadPRsReq.loadState.isStopped) {
+                if (this.grayTonePercentage < 1) {
+                  this.grayTonePercentage += (dt / 10); // over 10 seconds
+                }
+              }
+              else {
+                this.grayTonePercentage = 0;
               }
             },
           }, {

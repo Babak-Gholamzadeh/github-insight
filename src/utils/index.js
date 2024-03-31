@@ -1,3 +1,4 @@
+/* eslint-disable default-case */
 export const log = msg =>
   console.log(
     typeof (msg) === 'object'
@@ -178,3 +179,89 @@ export const convertTextToLink = text =>
     /(https?:\/\/[^\s()]+)/g,
     url => `<a target='_blank' rel='noreferrer' href='${url}'>${url}</a>`
   ) ?? '';
+
+// Gray Tone Color
+const COLOR_TYPE = {
+  HEX_S: 'HEX_S',
+  HEX: 'HEX',
+  HEXA_S: 'HEXA_S',
+  HEXA: 'HEXA',
+  RGB: 'RGB',
+  RGBA: 'RGBA',
+  STR: 'STR',
+};
+
+const getColorType = color => {
+  color = color.toLowerCase();
+  if (color.startsWith('#')) {
+    switch (color.length) {
+      case 4:
+        return COLOR_TYPE.HEX_S;
+      case 7:
+        return COLOR_TYPE.HEX;
+      case 5:
+        return COLOR_TYPE.HEXA_S;
+      case 9:
+        return COLOR_TYPE.HEXA;
+    }
+  } else if (color.startsWith('rgb')) {
+    if (color.slice(0, 4) === 'rgba')
+      return COLOR_TYPE.RGBA;
+    return COLOR_TYPE.RGB;
+  }
+  return COLOR_TYPE.STR;
+};
+
+const getRGBA = (color, colorType) => {
+  const rgba = [];
+  switch (colorType) {
+    case COLOR_TYPE.HEX_S:
+    case COLOR_TYPE.HEXA_S:
+      rgba.push(...color.slice(1).split('').map(h => parseInt(h.repeat(2), 16)));
+      break;
+    case COLOR_TYPE.HEX:
+    case COLOR_TYPE.HEXA:
+      rgba.push(...color.slice(1).match(/.{1,2}/g).map(h => parseInt(h, 16)));
+      break;
+    case COLOR_TYPE.RGB:
+    case COLOR_TYPE.RGBA:
+      rgba.push(...color.match(/[-+]?\d*\.?\d+/g).map(n => parseFloat(n)));
+      break;
+  }
+
+  return rgba;
+};
+
+const convertColorType = (grayToneColor, colorType) => {
+  switch (colorType) {
+    case COLOR_TYPE.HEX:
+    case COLOR_TYPE.HEX_S:
+    case COLOR_TYPE.HEXA:
+    case COLOR_TYPE.HEXA_S:
+      return '#' + grayToneColor.map(n => n.toString(16).padStart(2, '0')).join('');
+    case COLOR_TYPE.RGB:
+      return `rgb(${grayToneColor.join(', ')})`;
+    case COLOR_TYPE.RGBA:
+      return `rgba(${grayToneColor.join(', ')})`;
+  }
+};
+
+const getGrayToneWithPercentage = (rgb, percentage) => {
+  const avgColor = rgb.reduce((a, n) => a + n) / 3;
+  return rgb.map(n => Math.round(n - ((n - avgColor) * percentage)));
+};
+
+export const grayToneColor = (color, percentage = 1) => {
+  const colorType = getColorType(color);
+  if (colorType === COLOR_TYPE.STR)
+    return color;
+
+  const rgba = getRGBA(color, colorType);
+
+  const grayToneColor = getGrayToneWithPercentage(rgba.slice(0, 3), percentage);
+
+  if (rgba.length === 4)
+    grayToneColor.push(rgba[3]);
+
+  return convertColorType(grayToneColor, colorType);
+};

@@ -52,7 +52,7 @@ const BG_HIGHLIGHT_COLORS = (op) => [
   `rgba(85, 107, 47, ${op})`,     // Dark Olive Green
 ];
 
-const BarChart = ({ NOW, records }) => {
+const BarChart = ({ NOW, records, loadPRsReq }) => {
   log({ ComponentRerendered: 'GanttChart' });
   const refWrapper = useRef();
   const refCanvas = useRef();
@@ -761,10 +761,6 @@ const BarChart = ({ NOW, records }) => {
       borderColor: '#1d6bd5',
       lineWidth: 2,
       backgroundColor: 'rgba(29, 107, 213, .8)',
-      shadow: {
-        color: 'rgba(29, 107, 213, .7)',
-        blur: 100,
-      },
       size: [100, 20],
       padding: 5,
       update(dt) {
@@ -929,7 +925,7 @@ const BarChart = ({ NOW, records }) => {
         }
       },
       updatePRs(records) {
-        log({ recordsLen: records.length });
+        log({ BarRecordsLen: records.length });
 
         this.objects = [];
 
@@ -944,6 +940,7 @@ const BarChart = ({ NOW, records }) => {
             prColor: record.prColor,
             filterStatus: record.filterStatus,
             state: record.state,
+            grayTonePercentage: 0,
             update(dt) {
               this.size = [
                 tracks.trackWidth - (tracks.trackPadding * 2),
@@ -958,6 +955,15 @@ const BarChart = ({ NOW, records }) => {
               } else if (this.onMouseOut()) {
                 // this.backgroundColor = `rgba(${PR_STATE_COLORS[record.state]})`;
                 this.toolTip?.hide();
+              }
+
+              if (loadPRsReq.loadState.isStopped) {
+                if (this.grayTonePercentage < 1) {
+                  this.grayTonePercentage += (dt / 10); // over 10 seconds
+                }
+              }
+              else {
+                this.grayTonePercentage = 0;
               }
             },
           }, {
@@ -1125,7 +1131,6 @@ const BarChart = ({ NOW, records }) => {
       <canvas
         tabIndex={0}
         ref={refCanvas}
-        // @FIXME: When the canvas gets focued, the browser (chrome) gets scroll to make it completely visible
         onMouseEnter={() => refCanvas.current.focus({
           preventScroll: true
         })}

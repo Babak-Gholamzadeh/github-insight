@@ -1,4 +1,4 @@
-import { log } from ".";
+import { log, grayToneColor } from '.';
 
 class FPS {
   constructor() {
@@ -36,10 +36,7 @@ export class Engine {
     console.log('Engine > run');
     this.fps.init();
 
-    let frameCount = 0;
-
     (function engineLoop() {
-      frameCount++;
       const dt = this.fps.getDelta();
 
       this.scene.camera.clearViewport();
@@ -48,11 +45,8 @@ export class Engine {
 
       this.scene.renderObjects();
 
-      // this.scene.keyboard?.reset();
       this.scene.mouse?.reset();
 
-      // log({ frameCount });
-      // await new Promise(res => setTimeout(res, 10000));
       requestAnimationFrame(engineLoop.bind(this));
     }).call(this);
   }
@@ -308,6 +302,7 @@ export class Camera extends EngineEntity {
     position = [0, 0],
     size = [0, 0],
     radius = 0,
+    grayTonePercentage = 0,
   } = {}) {
     const posOnViewport = this.convertPosScene2Viewport(position);
     const sizeOnViewport = size.map(v => -v);
@@ -329,9 +324,9 @@ export class Camera extends EngineEntity {
       }
       this.ctx.fillStyle = gradientBackgroundColor;
     } else {
-      this.ctx.fillStyle = backgroundColor;
+      this.ctx.fillStyle = grayTonePercentage ? grayToneColor(backgroundColor, grayTonePercentage) : backgroundColor;
       this.ctx.lineWidth = lineWidth;
-      this.ctx.strokeStyle = borderColor;
+      this.ctx.strokeStyle = grayTonePercentage ? grayToneColor(borderColor, grayTonePercentage) : borderColor;
     }
     this.ctx.stroke();
     this.ctx.fill();
@@ -566,6 +561,7 @@ export class Rect extends EmptyObject {
       position,
       size,
       radius: this.radius,
+      grayTonePercentage: this.grayTonePercentage,
     });
   }
 }

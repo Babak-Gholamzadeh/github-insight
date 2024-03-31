@@ -25,6 +25,11 @@
     bottom: 0;
     width: 3px;
     transition: width .3s;
+    
+    &.load-stopped {
+      transition: width .3s, filter 10s;
+      filter: grayscale(1);
+    }
   }
 
   .pr-title {
